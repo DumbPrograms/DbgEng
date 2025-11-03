@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="DbgEngIdl/DbgEngIdl.csproj" Id="dbb3b947-1ec6-46c2-b0ca-5d31b70b1003" />
+  <Project Path="FixConformantArray/FixConformantArray.csproj" Id="5be068dd-cf0b-4658-a208-ea57440c3eed" />
+</Solution>
