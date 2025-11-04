@@ -72,17 +72,16 @@ namespace DbgEngIdl
 
         private static void ExtractDefinitions( StringBuilder output, Dictionary<string, string> uuids, string[] hpp, int i )
         {
-            var constants = new List<KeyValuePair<string, string>>();
+            var constants = new List<(string name, string value)>();
 
             for ( ; i < hpp.Length; i++ )
             {
                 var line = hpp[i];
                 if ( line.StartsWith("#define ") )
                 {
-                    string key, value;
-                    if ( CollectConstant(line, out key, out value) )
+                    if (CollectConstant(line, out var key, out var value))
                     {
-                        constants.Add(new KeyValuePair<string, string>(key, value));
+                        constants.Add((key, value));
                     }
                 }
                 else if ( line.StartsWith("typedef struct ") )
@@ -99,9 +98,9 @@ namespace DbgEngIdl
                 }
             }
 
-            foreach ( var constant in constants )
+            foreach ( var (name, value) in constants )
             {
-                output.AppendFormat("#define {0} {1}", constant.Key, constant.Value).AppendLine();
+                output.Append($"#define {name} {value}").AppendLine();
             }
         }
 
