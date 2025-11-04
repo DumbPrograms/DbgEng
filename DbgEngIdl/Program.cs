@@ -79,7 +79,7 @@ namespace DbgEngIdl
                 var line = hpp[i];
                 if ( line.StartsWith("#define ") )
                 {
-                    if (CollectConstant(line, out var key, out var value))
+                    if (TryCollectConstant(line, out var key, out var value))
                     {
                         constants.Add((key, value));
                     }
@@ -108,11 +108,11 @@ namespace DbgEngIdl
         {
             var parts = str.ToLower()
                            .Split('_')
-                           .Select(s => String.Format("{0}{1}", Char.ToUpper(s[0]), s.Length == 1 ? "" : s.Substring(1)));
+                           .Select(s => $"{Char.ToUpper(s[0])}{(s.Length == 1 ? "" : s.Substring(1))}");
             return String.Join("", parts);
         }
 
-        private static bool CollectConstant( string line, out string key, out string value )
+        private static bool TryCollectConstant( string line, out string key, out string value )
         {
             key = value = null;
             var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
