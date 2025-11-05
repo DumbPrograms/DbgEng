@@ -8,11 +8,22 @@ public class TestsBase
     {
         var hpp = new StringReader(hppSrc);
         var missing = new StringReader(missingSrc);
-        var result = new StringBuilder();
+        var sb = new StringBuilder();
 
-        var program = new SrcGen.Program(new StringWriter(result));
+        var program = new SrcGen.Program(new StringWriter(sb));
         program.Generate(hpp, missing);
 
-        Assert.Equal(expected.AsSpan().Trim(), result.ToString().AsSpan().Trim());
+        var result = sb.ToString();
+
+        var resultLines = result.AsSpan().Trim().EnumerateLines();
+        var expectLines = expected.AsSpan().Trim().EnumerateLines();
+
+        while (expectLines.MoveNext())
+        {
+            Assert.True(resultLines.MoveNext());
+            Assert.Equal(expectLines.Current.Trim(), resultLines.Current.Trim());
+        }
+
+        Assert.False(resultLines.MoveNext());
     }
 }
