@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SrcGen
 {
@@ -36,19 +37,16 @@ namespace SrcGen
             Output.WriteLine("namespace Interop.DbgEng;");
             Output.WriteLine();
 
-            GetInterfaceUUIDs(hpp);
-
             WriteDefinitions(hpp);
             WriteDefinitions(missing);
 
             WriteConstants();
         }
 
-        private void GetInterfaceUUIDs(TextReader hpp)
+        private void WriteDefinitions(TextReader hpp)
         {
-            var prefix = "typedef interface DECLSPEC_UUID(\"";
+            const string DECLSPEC_UUID = "typedef interface DECLSPEC_UUID(\"";
 
-            var found = false;
             while (hpp.Peek() > -1)
             {
                 var line = hpp.ReadLine();
@@ -57,32 +55,13 @@ namespace SrcGen
                 {
                     TryCollectConstant(line);
                 }
-                else if (line.StartsWith(prefix))
+                else if (line.StartsWith(DECLSPEC_UUID))
                 {
-                    found = true;
-                    var guid = line.Substring(prefix.Length, "f2df5f53-071f-47bd-9de6-5734c3fed689".Length);
+                    var guid = line.Substring(DECLSPEC_UUID.Length, "f2df5f53-071f-47bd-9de6-5734c3fed689".Length);
                     var typedef = hpp.ReadLine().AsSpan().Trim();
                     var name = typedef[..typedef.IndexOf('*')].ToString();
 
                     UUIDs.Add(name, guid);
-                }
-
-                if (found && line.StartsWith("//--"))
-                {
-                    break;
-                }
-            }
-        }
-
-        private void WriteDefinitions(TextReader hpp)
-        {
-            while (hpp.Peek() > -1)
-            {
-                var line = hpp.ReadLine();
-
-                if (line.StartsWith("#define "))
-                {
-                    TryCollectConstant(line);
                 }
                 else if (line.StartsWith("typedef struct _") || line.StartsWith("typedef union _"))
                 {
@@ -123,6 +102,11 @@ namespace SrcGen
 
         private void WriteConstants()
         {
+            if (Constants.Count < 1)
+            {
+                return;
+            }
+
             Output.WriteLine("public static partial class Constants");
             Output.WriteLine("{");
 
