@@ -10,8 +10,8 @@ public class StructTests : TestsBase
 
             public struct DebugOffsetRegion
             {
-                public ULONG64  Base;
-                public ULONG64  Size;
+                public ULONG64 Base;
+                public ULONG64 Size;
             }
             """,
             hppSrc: """
@@ -32,8 +32,8 @@ public class StructTests : TestsBase
 
             public struct DebugOffsetRegion
             {
-                public ULONG64  Base;
-                public ULONG64  Size;
+                public ULONG64 Base;
+                public ULONG64 Size;
             }
             """,
             "",
@@ -55,20 +55,20 @@ public class StructTests : TestsBase
             [StructLayout(LayoutKind.Explicit)]
             public struct InlineFrameContext
             {
-                [FieldOffset(0)] public DWORD  ContextValue;
+                [FieldOffset(0)] public DWORD ContextValue;
 
                 public struct NestedStruct1
                 {
-                    public BYTE  FrameId;
-                    public WORD  FrameSignature;
+                    public BYTE FrameId;
+                    public WORD FrameSignature;
                 }
 
                 [FieldOffset(0)] public NestedStruct1 NestedStruct1;
 
                 public struct NestedStruct2
                 {
-                    public BYTE  FrameType;
-                    public WORD  FrameSignature;
+                    public BYTE FrameType;
+                    public WORD FrameSignature;
                 }
 
                 [FieldOffset(0)] public NestedStruct2 Named;
@@ -76,8 +76,8 @@ public class StructTests : TestsBase
                 [StructLayout(LayoutKind.Explicit)]
                 public struct NestedUnion3
                 {
-                    [FieldOffset(0)] public BYTE  FrameId;
-                    [FieldOffset(0)] public WORD  FrameSignature;
+                    [FieldOffset(0)] public BYTE FrameId;
+                    [FieldOffset(0)] public WORD FrameSignature;
                 }
 
                 [FieldOffset(0)] public NestedUnion3 NestedUnion3;
@@ -85,8 +85,8 @@ public class StructTests : TestsBase
                 [StructLayout(LayoutKind.Explicit)]
                 public struct NestedUnion4
                 {
-                    [FieldOffset(0)] public BYTE  FrameType;
-                    [FieldOffset(0)] public WORD  FrameSignature;
+                    [FieldOffset(0)] public BYTE FrameType;
+                    [FieldOffset(0)] public WORD FrameSignature;
                 }
 
                 [FieldOffset(0)] public NestedUnion4 Named1;
@@ -128,39 +128,39 @@ public class StructTests : TestsBase
                 [StructLayout(LayoutKind.Explicit)]
                 public struct NestedUnion1
                 {
-                    [FieldOffset(0)] public UCHAR  I8;
+                    [FieldOffset(0)] public UCHAR I8;
 
                     public struct NestedStruct1
                     {
                         // Extra NAT indicator for IA64
                         // integer registers.  NAT will
                         // always be false for other CPUs.
-                        public ULONG64  I64;
-                        public BOOL  Nat;
+                        public ULONG64 I64;
+                        public BOOL Nat;
                     }
 
                     [FieldOffset(0)] public NestedStruct1 NestedStruct1;
 
                     public struct NestedStruct2
                     {
-                        public ULONG  LowPart;
-                        public ULONG  HighPart;
+                        public ULONG LowPart;
+                        public ULONG HighPart;
                     }
 
                     [FieldOffset(0)] public NestedStruct2 I64Parts32;
 
                     public struct NestedStruct3
                     {
-                        public ULONG64  LowPart;
-                        public LONG64  HighPart;
+                        public ULONG64 LowPart;
+                        public LONG64 HighPart;
                     }
 
                     [FieldOffset(0)] public NestedStruct3 F128Parts64;
                 }
 
                 public NestedUnion1 NestedUnion1;
-                public ULONG  TailOfRawBytes;
-                public ULONG  Type;
+                public ULONG TailOfRawBytes;
+                public ULONG Type;
             }
             """,
             hppSrc: """
@@ -226,6 +226,34 @@ public class StructTests : TestsBase
             "",
             missingSrc: """
             #define X 0
+            """);
+    }
+
+    [Fact]
+    public void TestInlineArray1()
+    {
+        AssertGenerated("""
+            namespace Interop.DbgEng;
+
+            public struct DebugOffsetRegion
+            {
+                public ArrayOf3<ULONG64> Base;
+                public ULONG64 Size;
+            }
+
+            [System.Runtime.CompilerServices.InlineArray(3)]
+            public struct ArrayOf3<T>
+            {
+                private T _item;
+            }
+            """,
+            "",
+            missingSrc: """
+            typedef struct _DEBUG_OFFSET_REGION
+            {
+                ULONG64 Base[3];
+                ULONG64 Size;
+            } DEBUG_OFFSET_REGION, *PDEBUG_OFFSET_REGION;
             """);
     }
 

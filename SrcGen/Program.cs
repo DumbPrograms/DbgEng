@@ -12,9 +12,11 @@ namespace SrcGen
     {
         private const string ExplicitLayoutAttribute = "[StructLayout(LayoutKind.Explicit)]";
         private const string FieldOffsetAttribute = "[FieldOffset(0)] ";
+
         readonly TextWriter Output;
         readonly Dictionary<string, string> UUIDs = [];
         readonly Dictionary<string, (string type, string value)> Constants = [];
+        readonly HashSet<int> InlineArrays = [];
 
         public Program(TextWriter output)
         {
@@ -40,6 +42,7 @@ namespace SrcGen
             WriteDefinitions(missing);
 
             WriteConstants();
+            WriteInlineArrays();
         }
 
         private void WriteDefinitions(TextReader hpp)
@@ -174,18 +177,35 @@ namespace SrcGen
                 }
                 else
                 {
-                    var sep = line.IndexOf(' ');
-                    var type = line[..sep];
+                    var space = line.IndexOf(' ');
+                    var type = line[..space];
 
                     if (type.SequenceEqual("IN") || type.SequenceEqual("OUT"))
                     {
-                        sep += line[(sep + 1)..].IndexOf(' ') + 1;
-                        type = line[(type.Length + 1)..sep];
+                        space += line[(space + 1)..].IndexOf(' ') + 1;
+                        type = line[(type.Length + 1)..space];
                     }
 
                     if (type.EndsWith("STR"))
                     {
                         Output.WriteLine("    [string]");
+                    }
+
+                    var memberName = line[(space + 1)..];
+                    var bracket = memberName.IndexOf('[');
+
+                    if (bracket > -1)
+                    {
+                        var length = memberName[(bracket + 1)..memberName.IndexOf(']')];
+                        memberName = memberName[..bracket];
+
+                        InlineArrays.Add(Int32.Parse(length));
+
+                        type = $"ArrayOf{length}<{type}>";
+                    }
+                    else
+                    {
+                        memberName = memberName[..memberName.IndexOf(';')];
                     }
 
                     WriteIndent(level + 1);
@@ -195,7 +215,15 @@ namespace SrcGen
                         Output.Write(FieldOffsetAttribute);
                     }
 
-                    Output.WriteLine($"public {type} {line[sep..]}");
+                    Output.Write($"public {type} {memberName};");
+
+                    var semicoln = line.IndexOf(';');
+                    if (semicoln + 1 < line.Length)
+                    {
+                        Output.Write(line[(semicoln + 1)..]);
+                    }
+
+                    Output.WriteLine();
                 }
             }
 
@@ -265,6 +293,25 @@ namespace SrcGen
             for (int i = 0; i < level; i++)
             {
                 Output.Write("    ");
+            }
+        }
+
+        private void WriteInlineArrays()
+        {
+            if (InlineArrays.Count < 1)
+            {
+                return;
+            }
+
+            foreach (var length in InlineArrays)
+            {
+                Output.WriteLine($$"""
+                    [System.Runtime.CompilerServices.InlineArray({{length}})]
+                    public struct ArrayOf{{length}}<T>
+                    {
+                        private T _item;
+                    }
+                    """);
             }
         }
 
