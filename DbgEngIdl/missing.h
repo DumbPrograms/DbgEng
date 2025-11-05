@@ -1,0 +1,124 @@
+﻿///////////////////////////////////////////////////////////
+// missing structs
+const DWORD EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
+
+typedef struct ExceptionRecord64 {
+    DWORD    ExceptionCode;
+    DWORD ExceptionFlags;
+    LONGLONG ExceptionRecord;
+    LONGLONG ExceptionAddress;
+    DWORD NumberParameters;
+    DWORD __unusedAlignment;
+    LONGLONG ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
+} EXCEPTION_RECORD64, * PEXCEPTION_RECORD64;
+
+typedef struct ImageFileHeader {
+    WORD    Machine;
+    WORD    NumberOfSections;
+    DWORD   TimeDateStamp;
+    DWORD   PointerToSymbolTable;
+    DWORD   NumberOfSymbols;
+    WORD    SizeOfOptionalHeader;
+    WORD    Characteristics;
+} IMAGE_FILE_HEADER, * PIMAGE_FILE_HEADER;
+
+typedef struct ImageDataDirectory {
+    DWORD   VirtualAddress;
+    DWORD   Size;
+} IMAGE_DATA_DIRECTORY, * PIMAGE_DATA_DIRECTORY;
+
+const DWORD IMAGE_NUMBEROF_DIRECTORY_ENTRIES = 16;
+
+typedef struct ImageOptionalHeader64 {
+    WORD        Magic;
+    BYTE        MajorLinkerVersion;
+    BYTE        MinorLinkerVersion;
+    DWORD       SizeOfCode;
+    DWORD       SizeOfInitializedData;
+    DWORD       SizeOfUninitializedData;
+    DWORD       AddressOfEntryPoint;
+    DWORD       BaseOfCode;
+    ULONGLONG   ImageBase;
+    DWORD       SectionAlignment;
+    DWORD       FileAlignment;
+    WORD        MajorOperatingSystemVersion;
+    WORD        MinorOperatingSystemVersion;
+    WORD        MajorImageVersion;
+    WORD        MinorImageVersion;
+    WORD        MajorSubsystemVersion;
+    WORD        MinorSubsystemVersion;
+    DWORD       Win32VersionValue;
+    DWORD       SizeOfImage;
+    DWORD       SizeOfHeaders;
+    DWORD       CheckSum;
+    WORD        Subsystem;
+    WORD        DllCharacteristics;
+    ULONGLONG   SizeOfStackReserve;
+    ULONGLONG   SizeOfStackCommit;
+    ULONGLONG   SizeOfHeapReserve;
+    ULONGLONG   SizeOfHeapCommit;
+    DWORD       LoaderFlags;
+    DWORD       NumberOfRvaAndSizes;
+    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
+} IMAGE_OPTIONAL_HEADER64, * PIMAGE_OPTIONAL_HEADER64;
+
+typedef struct ImageNtHeaders64 {
+    DWORD Signature;
+    IMAGE_FILE_HEADER FileHeader;
+    IMAGE_OPTIONAL_HEADER64 OptionalHeader;
+} IMAGE_NT_HEADERS64, * PIMAGE_NT_HEADERS64;
+
+typedef struct WindbgExtensionApis32 {
+    DWORD NotSupported;
+} WINDBG_EXTENSION_APIS32, * PWINDBG_EXTENSION_APIS32;
+
+typedef struct WindbgExtensionApis64 {
+    DWORD NotSupported;
+} WINDBG_EXTENSION_APIS64, * PWINDBG_EXTENSION_APIS64;
+
+typedef struct MemoryBasicInformation64 {
+    ULONGLONG BaseAddress;
+    ULONGLONG AllocationBase;
+    DWORD     AllocationProtect;
+    DWORD     __alignment1;
+    ULONGLONG RegionSize;
+    DWORD     State;
+    DWORD     Protect;
+    DWORD     Type;
+    DWORD     __alignment2;
+} MEMORY_BASIC_INFORMATION64, * PMEMORY_BASIC_INFORMATION64;
+
+///////////////////////////////////////////////////////////
+// missing defines
+
+//
+// dwCreationFlag values
+//
+
+enum CreationFlag {
+    DebugProcess = 0x00000001,
+    DebugOnlyThisProcess = 0x00000002,
+    CreateSuspended = 0x00000004,
+    DetachedProcess = 0x00000008,
+    CreateNewConsole = 0x00000010,
+    NormalPriorityClass = 0x00000020,
+    IdlePriorityClass = 0x00000040,
+    HighPriorityClass = 0x00000080,
+    RealtimePriorityClass = 0x00000100,
+    CreateNewProcessGroup = 0x00000200,
+    CreateUnicodeEnvironment = 0x00000400,
+    CreateSeparateWowVdm = 0x00000800,
+    CreateSharedWowVdm = 0x00001000,
+    CreateForcedos = 0x00002000,
+    BelowNormalPriorityClass = 0x00004000,
+    AboveNormalPriorityClass = 0x00008000,
+    StackSizeParamIsAReservation = 0x00010000,
+    CreateBreakawayFromJob = 0x01000000,
+    CreatePreserveCodeAuthzLevel = 0x02000000,
+    CreateDefaultErrorMode = 0x04000000,
+    CreateNoWindow = 0x08000000,
+    ProfileUser = 0x10000000,
+    ProfileKernel = 0x20000000,
+    ProfileServer = 0x40000000,
+    CreateIgnoreSystemDefault = 0x80000000
+};

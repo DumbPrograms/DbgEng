@@ -2,296 +2,391 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DbgEngIdl
+namespace SrcGen
 {
-    public class Program
+    public sealed class Program
     {
-        public static void Main( string[] args )
-        {
-            var header = File.ReadAllText("header.idl");
-            var footer = File.ReadAllText("footer.idl");
-            var hpp = File.ReadAllLines("dbgeng.h");
+        private const string ExplicitLayoutAttribute = "[StructLayout(LayoutKind.Explicit)]";
+        private const string FieldOffsetAttribute = "[FieldOffset(0)] ";
+        readonly TextWriter Output;
+        readonly Dictionary<string, string> UUIDs = [];
+        readonly Dictionary<string, (string type, string value)> Constants = [];
 
-            File.WriteAllText("DbgEng.idl", GenerateIdl(header, footer, hpp));
+        public Program(TextWriter output)
+        {
+            Output = output;
         }
 
-        private static string GenerateIdl( string header, string footer, string[] hpp )
+        public static void Main(string[] args)
         {
-            var output = new StringBuilder(512000);
+            using var output = new StreamWriter(new FileStream("DbgEng.g.cs", FileMode.Create));
+            using var hpp = File.OpenText("dbgeng.h");
+            using var missing = File.OpenText("missing.h");
 
-            output.Append(header);
-
-            var uuids = ExtractForwardDefinitions(output, hpp, out var lineNumber);
-
-            ExtractDefinitions(output, uuids, hpp, lineNumber);
-
-            output.Append(footer);
-            return output.ToString();
+            var program = new Program(output);
+            program.Generate(hpp, missing);
         }
 
-        private static Dictionary<string, string> ExtractForwardDefinitions(StringBuilder output, string[] hpp, out int i)
+        public void Generate(TextReader hpp, TextReader missing)
         {
-            output.AppendLine("//// Interface forward definitions");
+            Output.WriteLine("namespace Interop.DbgEng;");
+            Output.WriteLine();
 
-            var guids = new Dictionary<string, string>();
-            var signature = "typedef interface DECLSPEC_UUID(\"";
+            GetInterfaceUUIDs(hpp);
+
+            WriteDefinitions(hpp);
+            WriteDefinitions(missing);
+
+            WriteConstants();
+        }
+
+        private void GetInterfaceUUIDs(TextReader hpp)
+        {
+            var prefix = "typedef interface DECLSPEC_UUID(\"";
 
             var found = false;
-            for ( i = 0; i < hpp.Length; i++ )
+            while (hpp.Peek() > -1)
             {
-                var line = hpp[i];
-                if ( line.StartsWith(signature) )
+                var line = hpp.ReadLine();
+
+                if (line.StartsWith("#define "))
+                {
+                    TryCollectConstant(line);
+                }
+                else if (line.StartsWith(prefix))
                 {
                     found = true;
-                    var guid = line.Substring(signature.Length, "f2df5f53-071f-47bd-9de6-5734c3fed689".Length);
-                    var typedef = hpp[i + 1].Trim();
-                    var name = typedef.Substring(0, typedef.IndexOf('*'));
+                    var guid = line.Substring(prefix.Length, "f2df5f53-071f-47bd-9de6-5734c3fed689".Length);
+                    var typedef = hpp.ReadLine().AsSpan().Trim();
+                    var name = typedef[..typedef.IndexOf('*')].ToString();
 
-                    guids.Add(name, guid);
-
-                    output.AppendLine();
-                    output.AppendLine("interface " + name + ";");
-                    output.AppendLine("typedef " + typedef);
-
-                    i++;
+                    UUIDs.Add(name, guid);
                 }
 
-                if ( found && line.StartsWith("//--") )
+                if (found && line.StartsWith("//--"))
                 {
                     break;
                 }
             }
-
-            output.AppendLine();
-
-            return guids;
         }
 
-        private static void ExtractDefinitions( StringBuilder output, Dictionary<string, string> uuids, string[] hpp, int i )
+        private void WriteDefinitions(TextReader hpp)
         {
-            var constants = new List<(string name, string value)>();
-
-            for ( ; i < hpp.Length; i++ )
+            while (hpp.Peek() > -1)
             {
-                var line = hpp[i];
-                if ( line.StartsWith("#define ") )
-                {
-                    if (TryCollectConstant(line, out var key, out var value))
-                    {
-                        constants.Add((key, value));
-                    }
-                }
-                else if ( line.StartsWith("typedef struct _") )
-                {
-                    i = WriteStructTypeDef(output, hpp, i);
-                }
-                else if ( line.StartsWith("typedef union _") )
-                {
-                    i = WriteStructTypeDef(output, hpp, i, true);
-                }
-                else if ( line.StartsWith("DECLARE_INTERFACE_") )
-                {
-                    i = WriteInterfaceDef(output, uuids, hpp, i);
-                }
-            }
+                var line = hpp.ReadLine();
 
-            foreach ( var (name, value) in constants )
-            {
-                output.Append($"#define {name} {value}").AppendLine();
+                if (line.StartsWith("#define "))
+                {
+                    TryCollectConstant(line);
+                }
+                else if (line.StartsWith("typedef struct _") || line.StartsWith("typedef union _"))
+                {
+                    WriteStruct(hpp, line);
+                }
+                else if (line.StartsWith("DECLARE_INTERFACE_"))
+                {
+                    //WriteInterface(hpp, uuids, line);
+                }
             }
         }
 
-        private static string CamelCase( string str )
+        private bool TryCollectConstant(string line)
         {
-            var parts = str.ToLower()
-                           .Split('_')
-                           .Select(s => $"{Char.ToUpper(s[0])}{(s.Length == 1 ? "" : s.Substring(1))}");
-            return String.Join("", parts);
-        }
+            Span<Range> parts = stackalloc Range[2];
+            var define = line.AsSpan("#define ".Length);
+            var count = define.Split(parts, ' ', StringSplitOptions.RemoveEmptyEntries);
 
-        private static bool TryCollectConstant( string line, out string key, out string value )
-        {
-            key = value = null;
-            var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if ( !Char.IsDigit(parts[2][0]) )
+            if (count < 2)
+            {
+                return false;
+            }
+
+            if (!Char.IsDigit(define[parts[1]][0]))
             {
                 return false;
             }
             else
             {
-                key = parts[1];
-                value = parts[2];
+                var name = define[parts[0]].ToString();
+                var value = define[parts[1]].ToString();
+
+                Constants[name] = ("UINT32", value);
+
                 return true;
             }
         }
 
-        private static int WriteStructTypeDef( StringBuilder output, string[] hpp, int i, bool isUnion = false )
+        private void WriteConstants()
         {
-            var line = hpp[i].Trim();
+            Output.WriteLine("public static partial class Constants");
+            Output.WriteLine("{");
 
-            var structName = line.Substring((isUnion ? "typedef union _" : "typedef struct _").Length);
-            if ( structName.EndsWith("{") )
+            foreach (var (name, def) in Constants)
             {
-                structName = structName.Remove(structName.IndexOf(' '));
-                i++;
+                Output.WriteLine($"    public const {def.type} {name} = {def.value};");
+            }
+
+            Output.WriteLine("}");
+            Output.WriteLine();
+        }
+
+        private void WriteStruct(TextReader hpp, string fullLine)
+        {
+            var line = fullLine.AsSpan().Trim();
+            var isUnion = line["typedef ".Length] == 'u';
+
+            var structName = line[(isUnion ? "typedef union _" : "typedef struct _").Length..];
+            if (structName.EndsWith('{'))
+            {
+                structName = structName[..structName.IndexOf(' ')];
             }
             else
             {
-                i += 2;
+                hpp.ReadLine();
             }
 
-            output.Append($"typedef {(isUnion ? "union" : "struct")} {CamelCase(structName)} {{")
-                  .AppendLine();
-
-            var endSignature = "} " + structName;
-
-            for ( ; !(line = hpp[i].Trim()).StartsWith(endSignature); i++ )
+            if (isUnion)
             {
-                if ( line.StartsWith("struct")
-                  || line.StartsWith("union")
-                  || line.StartsWith("{")
-                  || line.StartsWith("}")
-                  || line.StartsWith("//")
-                  || String.IsNullOrEmpty(line)
-                   )
+                Output.WriteLine(ExplicitLayoutAttribute);
+            }
+
+            Output.WriteLine($"public struct {SnakeToCamel(structName)}");
+            Output.WriteLine("{");
+
+            WriteStructBody(hpp, 0, isUnion);
+
+            Output.WriteLine("}");
+            Output.WriteLine();
+        }
+
+        private string WriteStructBody(TextReader hpp, int level, bool isUnion)
+        {
+            var nestedStructs = 0;
+
+            while (hpp.Peek() > -1)
+            {
+                var fullLine = hpp.ReadLine();
+                var line = fullLine.AsSpan().Trim();
+
+                if (line.IsEmpty)
                 {
-                    output.AppendLine(line);
+                    Output.WriteLine();
+                }
+                else if (line.StartsWith("//"))
+                {
+                    Output.WriteLine(fullLine);
+                }
+                else if (line.StartsWith("struct") || line.StartsWith("union"))
+                {
+                    WriteNestedStruct(hpp, fullLine, level + 1, ++nestedStructs, isUnion);
+                }
+                else if (line.StartsWith('}'))
+                {
+                    return fullLine;
                 }
                 else
                 {
-                    output.Append("    ");
-
                     var sep = line.IndexOf(' ');
-                    var type = line.Substring(0, sep);
-                    if ( type == "IN" || type == "OUT" )
-                    {
-                        //output.Append('[').Append(type.ToLower()).Append("] ");
+                    var type = line[..sep];
 
-                        sep = line.IndexOf(' ', sep + 1);
-                        var used = type.Length + 1;
-                        type = line.Substring(used, sep - used);
+                    if (type.SequenceEqual("IN") || type.SequenceEqual("OUT"))
+                    {
+                        sep += line[(sep + 1)..].IndexOf(' ') + 1;
+                        type = line[(type.Length + 1)..sep];
                     }
 
-                    if ( type.EndsWith("STR") )
+                    if (type.EndsWith("STR"))
                     {
-                        output.Append("[string] ");
+                        Output.WriteLine("    [string]");
                     }
 
-                    output.Append(type)
-                          .AppendLine(line.Substring(sep));
+                    WriteIndent(level + 1);
+
+                    if (isUnion)
+                    {
+                        Output.Write(FieldOffsetAttribute);
+                    }
+
+                    Output.WriteLine($"public {type} {line[sep..]}");
                 }
             }
 
-            output.AppendLine(line).AppendLine();
-            return i;
+            return null;
         }
 
-        private static int WriteInterfaceDef( StringBuilder output, Dictionary<string, string> uuids, string[] hpp, int i )
+        private void WriteNestedStruct(TextReader hpp, string fullLine, int level, int index, bool insideUnion)
         {
-            var signature = "DECLARE_INTERFACE_(";
-            var line = hpp[i];
-            var name = line.Substring(signature.Length, line.IndexOf(',') - signature.Length);
-            var super = line.Substring(line.IndexOf(',') + 1);
-            super = super.Substring(0, super.Length - 1).Trim();
+            Output.WriteLine();
 
-            output.AppendLine("[")
-                  .AppendLine("    object,")
-                  .AppendLine("    uuid(" + uuids[name] + "),")
-                  .AppendLine("    helpstring(\"" + name + "\")")
-                  .AppendLine("]")
-                  .AppendLine($"interface {name} : {super} ")
-                  .AppendLine("{")
-                  ;
+            var line = fullLine.AsSpan().Trim();
+            var isUnion = line[0] == 'u';
 
-            var methodStart = "STDMETHOD";
-            bool inMethod = false, paramWasOptional = false;
-            for ( ; (line = hpp[i].Trim()) != "};"; i++ )
+            ReadOnlySpan<char> structName;
+
+            if (isUnion)
             {
-                if ( !inMethod && line.StartsWith(methodStart) )
-                {
-                    var L = line.IndexOf('(') + 1;
-                    var R = line.IndexOf(')');
-                    var methodName = line.Substring(L, R - L);
-                    if ( methodName == "QueryInterface" )
-                    {
-                        i += 10;
-                    }
-                    else
-                    {
-                        output.Append("    HRESULT ").Append(methodName).AppendLine("(");
-                        inMethod = true;
-                        paramWasOptional = false;
-                    }
-                }
-                else if ( inMethod && line.StartsWith("_") )
-                {
-                    line = Regex.Replace(line, @" *?/\*.*?\*/ *", " ");
-                    var parts = line.Split(' ');
-                    if ( parts[1] == "_Reserved_" )
-                    {
-                        parts[1] = parts[2];
-                        parts[2] = parts[3];
-                    }
+                WriteIndent(level);
+                Output.WriteLine(ExplicitLayoutAttribute);
 
-                    var cppAttr = parts[0];
-                    var type = parts[1];
-                    var param = parts[2];
-
-                    bool isArray;
-                    output.Append("        ")
-                          .Append(ToIdlAttr(cppAttr, ref paramWasOptional, type, out isArray)).Append(' ');
-
-                    if ( isArray )
-                    {
-                        if ( type == "PVOID" )
-                        {
-                            type = "byte";
-                        }
-                        if ( type.StartsWith("P") )
-                        {
-                            type = type.Substring(1);
-                        }
-                        if ( param.EndsWith(",") )
-                        {
-                            param = param.Replace(",", "[],");
-                        }
-                        else
-                        {
-                            param += "[]";
-                        }
-                    }
-
-                    output.Append(type).Append(' ').AppendLine(param);
-                }
-                else if ( inMethod && line.StartsWith(".") )
-                {
-                    output.AppendLine("        [optional] SAFEARRAY(VARIANT)");
-                }
-                else if ( inMethod && line.StartsWith(")") )
-                {
-                    output.AppendLine("    );");
-                    inMethod = paramWasOptional = false;
-                }
+                structName = $"NestedUnion{index}";
+            }
+            else
+            {
+                structName = $"NestedStruct{index}";
             }
 
-            output.AppendLine("};").AppendLine();
-            return i;
+            if (!fullLine.Contains('{'))
+            {
+                hpp.ReadLine();
+            }
+
+            WriteIndent(level);
+            Output.WriteLine($"public struct {structName}");
+
+            WriteIndent(level);
+            Output.WriteLine('{');
+
+            fullLine = WriteStructBody(hpp, level, isUnion);
+            line = fullLine.AsSpan().Trim();
+
+            WriteIndent(level);
+            Output.WriteLine('}');
+
+            WriteIndent(level);
+            Output.WriteLine();
+
+            var memberName = structName;
+
+            if (!line.StartsWith("};"))
+            {
+                memberName = line[(line.IndexOf(' ') + 1)..line.IndexOf(';')];
+            }
+
+            WriteIndent(level);
+
+            if (insideUnion)
+            {
+                Output.Write(FieldOffsetAttribute);
+            }
+
+            Output.WriteLine($"public {structName} {memberName};");
         }
 
-        private static string ToIdlAttr( string cppAttr, ref bool wasOptional, string type, out bool isArray )
+        private void WriteIndent(int level)
+        {
+            for (int i = 0; i < level; i++)
+            {
+                Output.Write("    ");
+            }
+        }
+
+        //private static int WriteInterface(TextWriter output, TextReader hpp, Dictionary<string, string> uuids, string line)
+        //{
+        //    var signature = "DECLARE_INTERFACE_(";
+        //    var name = line.Substring(signature.Length, line.IndexOf(',') - signature.Length);
+        //    var super = line.Substring(line.IndexOf(',') + 1);
+        //    super = super.Substring(0, super.Length - 1).Trim();
+
+        //    output.AppendLine("[")
+        //          .AppendLine("    object,")
+        //          .AppendLine("    uuid(" + uuids[name] + "),")
+        //          .AppendLine("    helpstring(\"" + name + "\")")
+        //          .AppendLine("]")
+        //          .AppendLine($"interface {name} : {super} ")
+        //          .AppendLine("{")
+        //          ;
+
+        //    var methodStart = "STDMETHOD";
+        //    bool inMethod = false, paramWasOptional = false;
+
+        //    while (!hpp.EndOfStream)
+        //    {
+        //        if (!inMethod && line.StartsWith(methodStart))
+        //        {
+        //            var L = line.IndexOf('(') + 1;
+        //            var R = line.IndexOf(')');
+        //            var methodName = line.Substring(L, R - L);
+        //            if (methodName == "QueryInterface")
+        //            {
+        //                i += 10;
+        //            }
+        //            else
+        //            {
+        //                output.Append("    HRESULT ").Append(methodName).AppendLine("(");
+        //                inMethod = true;
+        //                paramWasOptional = false;
+        //            }
+        //        }
+        //        else if (inMethod && line.StartsWith("_"))
+        //        {
+        //            line = Regex.Replace(line, @" *?/\*.*?\*/ *", " ");
+        //            var parts = line.Split(' ');
+        //            if (parts[1] == "_Reserved_")
+        //            {
+        //                parts[1] = parts[2];
+        //                parts[2] = parts[3];
+        //            }
+
+        //            var cppAttr = parts[0];
+        //            var type = parts[1];
+        //            var param = parts[2];
+
+        //            bool isArray;
+        //            output.Append("        ")
+        //                  .Append(ToIdlAttr(cppAttr, ref paramWasOptional, type, out isArray)).Append(' ');
+
+        //            if (isArray)
+        //            {
+        //                if (type == "PVOID")
+        //                {
+        //                    type = "byte";
+        //                }
+        //                if (type.StartsWith("P"))
+        //                {
+        //                    type = type.Substring(1);
+        //                }
+        //                if (param.EndsWith(","))
+        //                {
+        //                    param = param.Replace(",", "[],");
+        //                }
+        //                else
+        //                {
+        //                    param += "[]";
+        //                }
+        //            }
+
+        //            output.Append(type).Append(' ').AppendLine(param);
+        //        }
+        //        else if (inMethod && line.StartsWith("."))
+        //        {
+        //            output.AppendLine("        [optional] SAFEARRAY(VARIANT)");
+        //        }
+        //        else if (inMethod && line.StartsWith(")"))
+        //        {
+        //            output.AppendLine("    );");
+        //            inMethod = paramWasOptional = false;
+        //        }
+        //    }
+
+        //    output.AppendLine("};").AppendLine();
+        //}
+
+        private static string ToIdlAttr(string cppAttr, ref bool wasOptional, string type, out bool isArray)
         {
             // http://msdn.microsoft.com/en-us/library/hh916382.aspx
 
             var result = new StringBuilder("[");
 
-            if ( cppAttr.StartsWith("_In_") )
+            if (cppAttr.StartsWith("_In_"))
             {
                 result.Append("in");
             }
-            else if ( cppAttr.StartsWith("_Out_") )
+            else if (cppAttr.StartsWith("_Out_"))
             {
                 result.Append("out");
             }
@@ -300,7 +395,7 @@ namespace DbgEngIdl
                 result.Append("in,out");
             }
 
-            if ( cppAttr.Contains("_opt_") || wasOptional )
+            if (cppAttr.Contains("_opt_") || wasOptional)
             {
                 result.Append(",optional");
                 wasOptional = true;
@@ -309,23 +404,23 @@ namespace DbgEngIdl
             // http://msdn.microsoft.com/en-us/library/windows/desktop/aa366731(v=vs.85).aspx
 
             isArray = false;
-            if ( type.EndsWith("STR") )
+            if (type.EndsWith("STR"))
             {
                 result.Append(",string");
             }
             else
             {
                 var lp = cppAttr.IndexOf('(');
-                if ( lp > 0 )
+                if (lp > 0)
                 {
                     var param = cppAttr.Substring(lp + 1, cppAttr.Length - lp - 2);
-                    if ( cppAttr.Contains("_to_") )
+                    if (cppAttr.Contains("_to_"))
                     {
                         param = param.Split(',')[0];
                     }
-                    if ( !cppAttr.Contains("_bytes_") )
+                    if (!cppAttr.Contains("_bytes_"))
                     {
-                        if ( type.StartsWith("P") )
+                        if (type.StartsWith("P"))
                         {
                             type = type.Substring(1);
                         }
@@ -338,6 +433,31 @@ namespace DbgEngIdl
             }
 
             return result.Append(']').ToString();
+        }
+
+        private static string SnakeToCamel(ReadOnlySpan<char> snake)
+        {
+            var result = new StringBuilder(snake.Length);
+
+            Span<char> lower = snake.Length <= 64 ? stackalloc char[snake.Length] : new char[snake.Length];
+            snake.ToLowerInvariant(lower);
+
+            foreach (var range in snake.Split('_'))
+            {
+                var part = lower[range];
+
+                if (part.Length > 0)
+                {
+                    result.Append(Char.ToUpperInvariant(part[0]));
+
+                    if (part.Length > 1)
+                    {
+                        result.Append(part[1..]);
+                    }
+                }
+            }
+
+            return result.ToString();
         }
     }
 }
