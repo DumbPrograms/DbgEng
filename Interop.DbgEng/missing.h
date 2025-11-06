@@ -2,7 +2,7 @@
 // missing structs
 const DWORD EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
 
-typedef struct ExceptionRecord64 {
+typedef struct _EXCEPTION_RECORD64 {
     DWORD    ExceptionCode;
     DWORD ExceptionFlags;
     LONGLONG ExceptionRecord;
@@ -12,7 +12,7 @@ typedef struct ExceptionRecord64 {
     LONGLONG ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
 } EXCEPTION_RECORD64, * PEXCEPTION_RECORD64;
 
-typedef struct ImageFileHeader {
+typedef struct _IMAGE_FILE_HEADER {
     WORD    Machine;
     WORD    NumberOfSections;
     DWORD   TimeDateStamp;
@@ -22,14 +22,14 @@ typedef struct ImageFileHeader {
     WORD    Characteristics;
 } IMAGE_FILE_HEADER, * PIMAGE_FILE_HEADER;
 
-typedef struct ImageDataDirectory {
+typedef struct _IMAGE_DATA_DIRECTORY {
     DWORD   VirtualAddress;
     DWORD   Size;
 } IMAGE_DATA_DIRECTORY, * PIMAGE_DATA_DIRECTORY;
 
 const DWORD IMAGE_NUMBEROF_DIRECTORY_ENTRIES = 16;
 
-typedef struct ImageOptionalHeader64 {
+typedef struct _IMAGE_OPTIONAL_HEADER64 {
     WORD        Magic;
     BYTE        MajorLinkerVersion;
     BYTE        MinorLinkerVersion;
@@ -62,21 +62,21 @@ typedef struct ImageOptionalHeader64 {
     IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];
 } IMAGE_OPTIONAL_HEADER64, * PIMAGE_OPTIONAL_HEADER64;
 
-typedef struct ImageNtHeaders64 {
+typedef struct _IMAGE_NT_HEADERS64 {
     DWORD Signature;
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_OPTIONAL_HEADER64 OptionalHeader;
 } IMAGE_NT_HEADERS64, * PIMAGE_NT_HEADERS64;
 
-typedef struct WindbgExtensionApis32 {
+typedef struct _WINDBG_EXTENSION_APIS32 {
     DWORD NotSupported;
 } WINDBG_EXTENSION_APIS32, * PWINDBG_EXTENSION_APIS32;
 
-typedef struct WindbgExtensionApis64 {
+typedef struct _WINDBG_EXTENSION_APIS64 {
     DWORD NotSupported;
 } WINDBG_EXTENSION_APIS64, * PWINDBG_EXTENSION_APIS64;
 
-typedef struct MemoryBasicInformation64 {
+typedef struct _MEMORY_BASIC_INFORMATION64 {
     ULONGLONG BaseAddress;
     ULONGLONG AllocationBase;
     DWORD     AllocationProtect;
