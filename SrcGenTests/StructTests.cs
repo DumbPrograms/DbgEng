@@ -96,6 +96,24 @@ public class StructTests : TestsBase
     }
 
     [Fact]
+    public void TestStruct5()
+    {
+        AssertGenerated("""
+            public struct DebugOffsetRegion
+            {
+                public IntPtr/*PVOID*/ Base; // comment
+            }
+            """,
+            hppSrc: """
+            typedef struct _DEBUG_OFFSET_REGION
+            {
+                PVOID Base; // comment
+            } DEBUG_OFFSET_REGION, *PDEBUG_OFFSET_REGION;
+            """,
+            "");
+    }
+
+    [Fact]
     public void TestStructsRef1()
     {
         AssertGenerated("""

@@ -303,6 +303,10 @@ namespace SrcGen
                         Output.WriteLine("    [MarshalAs(UnmanagedType.LPWStr)]");
                         type = "string";
                     }
+                    else if (type.StartsWith('P'))
+                    {
+                        type = $"IntPtr/*{type}*/";
+                    }
 
                     var memberName = line[(space + 1)..];
                     var bracket = memberName.IndexOf('[');
