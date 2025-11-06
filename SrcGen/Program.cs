@@ -430,6 +430,24 @@ namespace SrcGen
 
         //private static int WriteInterface(TextWriter output, TextReader hpp, Dictionary<string, string> uuids, string line)
         //{
+        //    // See https://devblogs.microsoft.com/oldnewthing/20041005-00/?p=37653
+        //    // What are the rules?
+        //    // 
+        //    //  * You must set the INTERFACE macro to the name of the interface being declared.
+        //    //    Note that you need to #undef any previous value before you #define the new one.
+        //    //  * You must use the DECLARE_INTERFACE and DECLARE_INTERFACE_ macros to generate the preliminary bookkeeping for an interface.
+        //    //    Use DECLARE_INTERFACE for interfaces that have no base class and DECLARE_INTERFACE_ for interfaces that derive from some other interface.
+        //    //    In our example, we derive the ISample2 interface from ISample.
+        //    //    Note: In practice, you will never find the plain DECLARE_INTERFACE macro because all interfaces derive from IUnknown if nothing else.
+        //    //  * You must list all the methods of the base interfaces in exactly the same order that they are listed by that base interface;
+        //    //    the methods that you are adding in the new interface must go last.
+        //    //  * You must use the STDMETHOD or STDMETHOD_ macros to declare the methods.
+        //    //    Use STDMETHOD if the return value is HRESULT and STDMETHOD_ if the return value is some other type.
+        //    //  * If your method has no parameters, then the argument list must be (THIS).
+        //    //    Otherwise, you must insert THIS_ immediately after the open-parenthesis of the parameter list.
+        //    //  * After the parameter list and before the semicolon, you must say PURE.
+        //    //  * Inside the curly braces, you must say BEGIN_INTERFACE and END_INTERFACE.
+        //
         //    var signature = "DECLARE_INTERFACE_(";
         //    var name = line.Substring(signature.Length, line.IndexOf(',') - signature.Length);
         //    var super = line.Substring(line.IndexOf(',') + 1);
