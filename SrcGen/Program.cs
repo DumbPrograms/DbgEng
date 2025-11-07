@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace SrcGen
 {
-    public sealed class Program
+    public sealed partial class Program
     {
         private const string ExplicitLayoutAttribute = "[StructLayout(LayoutKind.Explicit)]";
         private const string FieldOffsetAttribute = "[FieldOffset(0)] ";
@@ -15,6 +15,7 @@ namespace SrcGen
         public const string GeneratedHeader = """
             using System.Runtime.CompilerServices;
             using System.Runtime.InteropServices;
+            using System.Runtime.InteropServices.Marshalling;
             
             namespace Interop.DbgEng;
             
@@ -100,7 +101,7 @@ namespace SrcGen
                 }
                 else if (line.StartsWith("DECLARE_INTERFACE_"))
                 {
-                    //WriteInterface(hpp, uuids, line);
+                    WriteInterface(hpp, line);
                 }
             }
         }
@@ -435,114 +436,172 @@ namespace SrcGen
             }
         }
 
-        //private static int WriteInterface(TextWriter output, TextReader hpp, Dictionary<string, string> uuids, string line)
-        //{
-        //    // See https://devblogs.microsoft.com/oldnewthing/20041005-00/?p=37653
-        //    // What are the rules?
-        //    // 
-        //    //  * You must set the INTERFACE macro to the name of the interface being declared.
-        //    //    Note that you need to #undef any previous value before you #define the new one.
-        //    //  * You must use the DECLARE_INTERFACE and DECLARE_INTERFACE_ macros to generate the preliminary bookkeeping for an interface.
-        //    //    Use DECLARE_INTERFACE for interfaces that have no base class and DECLARE_INTERFACE_ for interfaces that derive from some other interface.
-        //    //    In our example, we derive the ISample2 interface from ISample.
-        //    //    Note: In practice, you will never find the plain DECLARE_INTERFACE macro because all interfaces derive from IUnknown if nothing else.
-        //    //  * You must list all the methods of the base interfaces in exactly the same order that they are listed by that base interface;
-        //    //    the methods that you are adding in the new interface must go last.
-        //    //  * You must use the STDMETHOD or STDMETHOD_ macros to declare the methods.
-        //    //    Use STDMETHOD if the return value is HRESULT and STDMETHOD_ if the return value is some other type.
-        //    //  * If your method has no parameters, then the argument list must be (THIS).
-        //    //    Otherwise, you must insert THIS_ immediately after the open-parenthesis of the parameter list.
-        //    //  * After the parameter list and before the semicolon, you must say PURE.
-        //    //  * Inside the curly braces, you must say BEGIN_INTERFACE and END_INTERFACE.
-        //
-        //    var signature = "DECLARE_INTERFACE_(";
-        //    var name = line.Substring(signature.Length, line.IndexOf(',') - signature.Length);
-        //    var super = line.Substring(line.IndexOf(',') + 1);
-        //    super = super.Substring(0, super.Length - 1).Trim();
+        private static string SeekTo(TextReader hpp, string prefix, bool ignoreLeadingSpaces)
+        {
+            while (hpp.Peek() > -1)
+            {
+                var line = hpp.ReadLine();
+                var span = line.AsSpan();
 
-        //    output.AppendLine("[")
-        //          .AppendLine("    object,")
-        //          .AppendLine("    uuid(" + uuids[name] + "),")
-        //          .AppendLine("    helpstring(\"" + name + "\")")
-        //          .AppendLine("]")
-        //          .AppendLine($"interface {name} : {super} ")
-        //          .AppendLine("{")
-        //          ;
+                if (ignoreLeadingSpaces)
+                {
+                    span = span.TrimStart();
+                }
 
-        //    var methodStart = "STDMETHOD";
-        //    bool inMethod = false, paramWasOptional = false;
+                if (span.StartsWith(prefix))
+                {
+                    return line;
+                }
+            }
 
-        //    while (!hpp.EndOfStream)
-        //    {
-        //        if (!inMethod && line.StartsWith(methodStart))
-        //        {
-        //            var L = line.IndexOf('(') + 1;
-        //            var R = line.IndexOf(')');
-        //            var methodName = line.Substring(L, R - L);
-        //            if (methodName == "QueryInterface")
-        //            {
-        //                i += 10;
-        //            }
-        //            else
-        //            {
-        //                output.Append("    HRESULT ").Append(methodName).AppendLine("(");
-        //                inMethod = true;
-        //                paramWasOptional = false;
-        //            }
-        //        }
-        //        else if (inMethod && line.StartsWith("_"))
-        //        {
-        //            line = Regex.Replace(line, @" *?/\*.*?\*/ *", " ");
-        //            var parts = line.Split(' ');
-        //            if (parts[1] == "_Reserved_")
-        //            {
-        //                parts[1] = parts[2];
-        //                parts[2] = parts[3];
-        //            }
+            return null;
+        }
 
-        //            var cppAttr = parts[0];
-        //            var type = parts[1];
-        //            var param = parts[2];
+        private void WriteInterface(TextReader hpp, string fullLine)
+        {
+            // See https://devblogs.microsoft.com/oldnewthing/20041005-00/?p=37653
+            // What are the rules?
+            //  * ...
+            //    Note: In practice, you will never find the plain DECLARE_INTERFACE macro because all interfaces derive from IUnknown if nothing else.
+            //  * You must list all the methods of the base interfaces in exactly the same order that they are listed by that base interface;
+            //    the methods that you are adding in the new interface must go last.
+            //  * You must use the STDMETHOD or STDMETHOD_ macros to declare the methods.
+            //    Use STDMETHOD if the return value is HRESULT and STDMETHOD_ if the return value is some other type.
+            //  * If your method has no parameters, then the argument list must be (THIS).
+            //    Otherwise, you must insert THIS_ immediately after the open-parenthesis of the parameter list.
+            //  * After the parameter list and before the semicolon, you must say PURE.
 
-        //            bool isArray;
-        //            output.Append("        ")
-        //                  .Append(ToIdlAttr(cppAttr, ref paramWasOptional, type, out isArray)).Append(' ');
+            var line = fullLine.AsSpan();
+            var interfaceName = line["DECLARE_INTERFACE_(".Length..line.IndexOf(',')];
 
-        //            if (isArray)
-        //            {
-        //                if (type == "PVOID")
-        //                {
-        //                    type = "byte";
-        //                }
-        //                if (type.StartsWith("P"))
-        //                {
-        //                    type = type.Substring(1);
-        //                }
-        //                if (param.EndsWith(","))
-        //                {
-        //                    param = param.Replace(",", "[],");
-        //                }
-        //                else
-        //                {
-        //                    param += "[]";
-        //                }
-        //            }
+            Output.Write($$"""
+                [GeneratedComInterface]
+                [Guid("{{UUIDs.GetAlternateLookup<ReadOnlySpan<char>>()[interfaceName]}}")]
+                public partial interface {{interfaceName}}
+                """);
 
-        //            output.Append(type).Append(' ').AppendLine(param);
-        //        }
-        //        else if (inMethod && line.StartsWith("."))
-        //        {
-        //            output.AppendLine("        [optional] SAFEARRAY(VARIANT)");
-        //        }
-        //        else if (inMethod && line.StartsWith(")"))
-        //        {
-        //            output.AppendLine("    );");
-        //            inMethod = paramWasOptional = false;
-        //        }
-        //    }
+            if (Char.IsDigit(interfaceName[^1]))
+            {
+                var n = interfaceName.IndexOfAnyInRange('0', '9');
+                var family = interfaceName[..n];
+                var generation = interfaceName[n..];
+                var prevGen = Int32.Parse(generation) - 1;
 
-        //    output.AppendLine("};").AppendLine();
-        //}
+                if (prevGen == 1)
+                {
+                    Output.Write($" : {family}");
+                }
+                else
+                {
+                    Output.Write($" : {family}{prevGen}");
+                }
+            }
+
+            Output.WriteLine();
+            Output.WriteLine("{");
+
+            SeekTo(hpp, $"// {interfaceName}.", true);
+
+            ReadOnlySpan<char> methodName = "", returnType = "";
+            var paramWasOptional = false;
+
+            while (hpp.Peek() > -1)
+            {
+                fullLine = hpp.ReadLine();
+                line = fullLine.AsSpan().Trim();
+
+                if (methodName.IsEmpty)
+                {
+                    if (line.StartsWith("STDMETHOD"))
+                    {
+                        var L = line.IndexOf('(') + 1;
+                        var R = line.IndexOf(')');
+
+                        if (line["STDMETHOD".Length] == '_')
+                        {
+                            var comma = line.IndexOf(',');
+
+                            returnType = line[L..comma];
+                            methodName = line[(comma + ", ".Length)..R];
+                        }
+                        else
+                        {
+                            returnType = "HRESULT";
+                            methodName = line[L..R];
+                        }
+
+                        Output.WriteLine($"""
+                                [PreserveSig]
+                                {returnType} {methodName}
+                                (
+                            """);
+                    }
+                    else if (fullLine.StartsWith("};")) 
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    if (line.StartsWith("_"))
+                    {
+                        line = InlineCommentRegex.Replace(fullLine, " ").AsSpan().Trim();
+
+                        //var parts = line.Split(' ');
+                        //if (parts[1] == "_Reserved_")
+                        //{
+                        //    parts[1] = parts[2];
+                        //    parts[2] = parts[3];
+                        //}
+
+                        //var cppAttr = parts[0];
+                        //var type = parts[1];
+                        //var param = parts[2];
+
+                        //bool isArray;
+                        //output.Append("        ")
+                        //      .Append(ToIdlAttr(cppAttr, ref paramWasOptional, type, out isArray)).Append(' ');
+
+                        //if (isArray)
+                        //{
+                        //    if (type == "PVOID")
+                        //    {
+                        //        type = "byte";
+                        //    }
+                        //    if (type.StartsWith("P"))
+                        //    {
+                        //        type = type.Substring(1);
+                        //    }
+                        //    if (param.EndsWith(","))
+                        //    {
+                        //        param = param.Replace(",", "[],");
+                        //    }
+                        //    else
+                        //    {
+                        //        param += "[]";
+                        //    }
+                        //}
+
+                        //output.Append(type).Append(' ').AppendLine(param);
+                    }
+                    else if (line.StartsWith('.'))
+                    {
+                        //output.AppendLine("        [optional] SAFEARRAY(VARIANT)");
+                    }
+                    else if (line.StartsWith(") PURE;"))
+                    {
+                        returnType = methodName = "";
+                        paramWasOptional = false;
+
+                        Output.WriteLine("    );");
+                        Output.WriteLine();
+                    }
+                }
+            }
+
+            Output.WriteLine("}");
+            Output.WriteLine();
+        }
 
         private static string ToIdlAttr(string cppAttr, ref bool wasOptional, string type, out bool isArray)
         {
@@ -627,5 +686,8 @@ namespace SrcGen
 
             return result.ToString();
         }
+
+        [GeneratedRegex(@" *?/\*.*?\*/ *")]
+        private static partial Regex InlineCommentRegex { get; }
     }
 }
