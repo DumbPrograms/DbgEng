@@ -1,4 +1,7 @@
-﻿namespace Interop.DbgEng;
+﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+namespace Interop.DbgEng;
 
 public partial interface IDebugClient
 {
@@ -6,6 +9,8 @@ public partial interface IDebugClient
     {
         DbgEngApi.DebugCreate(new Guid(Constants.IID_IDebugClient), out var pDebugClient);
 
-        throw new NotImplementedException();
+        var cw = new StrategyBasedComWrappers();
+
+        return (IDebugClient)cw.GetOrCreateObjectForComInstance(pDebugClient, CreateObjectFlags.UniqueInstance);
     }
 }

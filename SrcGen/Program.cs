@@ -503,8 +503,7 @@ namespace SrcGen
 
             SeekTo(hpp, $"// {interfaceName}", true);
 
-            ReadOnlySpan<char> methodName = "", returnType = "";
-            var paramWasOptional = false;
+            ReadOnlySpan<char> methodName = "";
 
             while (hpp.Peek() > -1)
             {
@@ -517,6 +516,8 @@ namespace SrcGen
                     {
                         var L = line.IndexOf('(') + 1;
                         var R = line.IndexOf(')');
+
+                        ReadOnlySpan<char> returnType;
 
                         if (line["STDMETHOD".Length] == '_')
                         {
@@ -544,9 +545,25 @@ namespace SrcGen
                 }
                 else
                 {
-                    if (line.StartsWith("_"))
+                    if (line.StartsWith('_'))
                     {
-                        line = InlineCommentRegex.Replace(fullLine, " ").AsSpan().Trim();
+                        // See https://learn.microsoft.com/en-us/cpp/code-quality/annotating-function-parameters-and-return-values?view=msvc-170
+
+                        var annotation = line[..line.IndexOfAny(" (")];
+                        var maybeNull = annotation.EndsWith("_opt_");
+                        ReadOnlySpan<char> type = "", spanLength = "";
+                        var isReadOnly = true;
+
+                        if (annotation["_".Length] == 'O') // output parameter
+                        {
+                        }
+                        else if (annotation["_In".Length] == 'o') // ref parameter
+                        {
+                            isReadOnly = false;
+                        }
+                        else
+                        {
+                        }
 
                         //var parts = line.Split(' ');
                         //if (parts[1] == "_Reserved_")
@@ -591,8 +608,7 @@ namespace SrcGen
                     }
                     else if (line.StartsWith(") PURE;"))
                     {
-                        returnType = methodName = "";
-                        paramWasOptional = false;
+                        methodName = "";
 
                         Output.WriteLine("    );");
                         Output.WriteLine();
