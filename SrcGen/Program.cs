@@ -28,6 +28,9 @@ namespace SrcGen
         readonly Dictionary<string, (string type, string value, string comment)> Constants = [];
         readonly HashSet<int> InlineArrays = [];
 
+        bool TryGetGeneratedType(ReadOnlySpan<char> native, out string managed)
+            => Types.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(native, out managed);
+
         public Program(TextWriter output)
         {
             Output = output;
@@ -92,9 +95,12 @@ namespace SrcGen
                 {
                     var guid = line.Substring(DECLSPEC_UUID.Length, "f2df5f53-071f-47bd-9de6-5734c3fed689".Length);
                     var typedef = hpp.ReadLine().AsSpan().Trim();
-                    var name = typedef[..typedef.IndexOf('*')].ToString();
+                    var star = typedef.IndexOf('*');
+                    var name = typedef[..star].ToString();
+                    var pointerType = typedef[star..typedef.IndexOf(';')].Trim();
 
                     UUIDs.Add(name, guid);
+                    Types.Add(pointerType.ToString(), name);
                 }
                 else if (line.StartsWith("typedef struct _") || line.StartsWith("typedef union _"))
                 {
@@ -249,7 +255,8 @@ namespace SrcGen
             }
 
             var generatedStructName = SnakeToCamel(structName);
-            Types.GetAlternateLookup<ReadOnlySpan<char>>()[structName] = generatedStructName;
+            Types[$"{structName}"] = generatedStructName;
+            Types[$"P{structName}"] = generatedStructName;
 
             Output.WriteLine($"public struct {generatedStructName}");
             Output.WriteLine("{");
@@ -292,11 +299,13 @@ namespace SrcGen
 
                     if (type.SequenceEqual("IN") || type.SequenceEqual("OUT"))
                     {
+                        Output.WriteLine($"    // {type}");
+
                         space += line[(space + 1)..].IndexOf(' ') + 1;
                         type = line[(type.Length + 1)..space];
                     }
 
-                    if (Types.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(type, out var generatedType))
+                    if (TryGetGeneratedType(type, out var generatedType))
                     {
                         type = generatedType;
                     }
@@ -539,7 +548,7 @@ namespace SrcGen
                                 (
                             """);
                     }
-                    else if (fullLine.StartsWith("};")) 
+                    else if (fullLine.StartsWith("};"))
                     {
                         break;
                     }
@@ -583,35 +592,85 @@ namespace SrcGen
                          */
 
                         var annotation = line[..line.IndexOfAny(" (")];
+                        var annotationLength = annotation.Length;
+                        var isReadOnly = annotation.StartsWith("_In_");
                         var mayBeDefault = annotation.EndsWith("_opt_");
 
-                        var isReadOnly = false;
-                        ReadOnlySpan<char> spanLength = default;
-
-                        if (annotation["_".Length] == 'O') // output parameter
+                        ReadOnlySpan<char> spanSizeExpr = default, writtenSizeExpr = default;
+                        if (annotation.ContainsAny("rw"))
                         {
-                            if (annotation.Contains("writes", StringComparison.Ordinal))
-                            {
+                            Debug.Assert(line.ContainsAny("(,)"));
 
+                            spanSizeExpr = line[(annotation.Length + "(".Length)..line.IndexOfAny(",)")];
+                            annotationLength += spanSizeExpr.Length + "()".Length;
+
+                            if (annotation.Contains("_to_", StringComparison.Ordinal))
+                            {
+                                Debug.Assert(line.Contains(','));
+
+                                writtenSizeExpr = line[(line.IndexOf(',') + ",".Length)..line.IndexOf(')')];
+                                annotationLength += writtenSizeExpr.Length + ")".Length;
                             }
                         }
-                        else if (annotation["_In".Length] == 'o')
+
+                        WriteIndent(2);
+                        Output.WriteLine($"// {line[..annotationLength]}");
+
+                        line = line[annotationLength..].TrimStart();
+
+                        if (line.StartsWith("/*"))
                         {
-                            if (annotation.Contains("updates", StringComparison.Ordinal))
+                            var afterComment = "/*".Length + line["/*".Length..].IndexOf("*/", StringComparison.Ordinal) + "*/".Length;
+
+                            line = line[afterComment..].TrimStart();
+                        }
+
+                        var type = line[..line.IndexOfAny(" *")];
+
+                        Debug.Assert(!type.IsEmpty);
+
+                        var pointerIndirections = 0;
+                        if (type[0] == 'P')
+                        {
+                            pointerIndirections++;
+                        }
+                        if (line[type.Length..].Contains('*'))
+                        {
+                            pointerIndirections++;
+                        }
+
+                        string managedType;
+
+                        if (!TryGetGeneratedType(type, out managedType))
+                        {
+                            managedType = (type[0] == 'P' ? type[1..] : type).ToString();
+                        }
+
+                        if (pointerIndirections == 1)
+                        {
+                            if (spanSizeExpr.IsEmpty)
                             {
-                                // We have not seen _updates_ in _Inout_ annotations yet
-                                throw new NotImplementedException();
+                                managedType = isReadOnly ? $"in {managedType}" : $"out {managedType}";
+                            }
+                            else
+                            {
+                                if (managedType == "VOID")
+                                {
+                                    managedType = "byte";
+                                }
+
+                                managedType = isReadOnly ? $"ReadOnlySpan<{managedType}>" : $"Span<{managedType}>";
                             }
                         }
-                        else
+
+                        var nameAndRest = line[type.Length..].TrimStart();
+                        if (nameAndRest[0] == '*')
                         {
-                            isReadOnly = true;
-
-                            if (annotation.Contains("reads", StringComparison.Ordinal))
-                            {
-
-                            }
+                            nameAndRest = nameAndRest[1..];
                         }
+
+                        WriteIndent(2);
+                        Output.WriteLine($"{managedType} {nameAndRest}");
 
                         //var parts = line.Split(' ');
                         //if (parts[1] == "_Reserved_")

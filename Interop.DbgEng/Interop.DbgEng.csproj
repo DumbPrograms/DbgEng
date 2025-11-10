@@ -12,10 +12,6 @@
     <PackageReference Include="Microsoft.Debugging.Platform.SymSrv" Version="20250929.1313.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="$(MicrosoftDebuggingPlatformDbgEngContent)../build/native/inc/dbgeng.h" Link="dbgeng.h" />
-  </ItemGroup>
-
   <Target Name="GenSrc" AfterTargets="ResolveReferences">
     <Exec Command="&quot;$(OutDir)../../SrcGen/$(Configuration)/SrcGen.exe&quot; &quot;$(MicrosoftDebuggingPlatformDbgEngContent)../build/native/inc/dbgeng.h&quot;" />
   </Target>
