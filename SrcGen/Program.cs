@@ -437,7 +437,7 @@ namespace SrcGen
             }
         }
 
-        private static string SeekTo(TextReader hpp, string prefix, bool ignoreLeadingSpaces)
+        private static string SeekToLine(TextReader hpp, string prefix, bool ignoreLeadingSpaces)
         {
             while (hpp.Peek() > -1)
             {
@@ -502,7 +502,7 @@ namespace SrcGen
             Output.WriteLine();
             Output.WriteLine("{");
 
-            SeekTo(hpp, $"// {interfaceName}", true);
+            SeekToLine(hpp, $"// {interfaceName}", true);
 
             ReadOnlySpan<char> methodName = default;
 
@@ -548,12 +548,39 @@ namespace SrcGen
                 {
                     if (line.StartsWith('_'))
                     {
-                        // See https://learn.microsoft.com/en-us/cpp/code-quality/annotating-function-parameters-and-return-values?view=msvc-170
-                        // Currently used ones:
-                        // _In_: opt, reads(n), reads_opt(n), reads_bytes(n), reads_bytes_opt(n)
-                        // _Out_: opt, writes(n), writes_opt(n), writes_bytes(n), writes_bytes_opt(n), writes_to(n,x), writes_to_opt(n,x)
-                        // _Outptr_: result_buffer(n)
-                        // _Inout_: opt
+                        if (line.Contains(" _Reserved_ ", StringComparison.Ordinal))
+                        {
+                            // reserved pointer must be 0
+
+                            WriteIndent(2);
+                            Output.Write("IntPtr Reserved");
+
+                            if (!line.Contains(','))
+                            {
+                                Output.Write(" = 0");
+                            }
+                            else
+                            {
+                                Output.Write(',');
+                            }
+
+                            Output.WriteLine();
+
+                            continue;
+                        }
+
+                        /*
+                         * See https://learn.microsoft.com/en-us/cpp/code-quality/annotating-function-parameters-and-return-values?view=msvc-170
+                         * Currently used annotations are listed below.
+                         * Please note that 'n' means the capacity of the array, 'x' means the number of elements valid in post-state.
+                         * For input parameters, all n elements must be valid in pre-state.
+                         * For output parameters, those n elements don't have to be valid in pre-state.
+                         * 
+                         * _In_: opt, reads(n), reads_opt(n), reads_bytes(n), reads_bytes_opt(n)
+                         * _Out_: opt, writes(n), writes_opt(n), writes_bytes(n), writes_bytes_opt(n), writes_to(n,x), writes_to_opt(n,x)
+                         * _Outptr_: result_buffer(n)
+                         * _Inout_: opt
+                         */
 
                         var annotation = line[..line.IndexOfAny(" (")];
                         var mayBeDefault = annotation.EndsWith("_opt_");
