@@ -667,13 +667,21 @@ namespace SrcGen
                                 }
                                 else if (nativeType.EndsWith("STR"))
                                 {
+                                    Debug.Assert(isReadOnly);
+
+                                    generatedName = "string";
+
                                     switch (nativeType)
                                     {
-                                        case "PSTR" when isReadOnly:
+                                        case "PSTR":
                                         case "PCSTR":
                                             WriteIndent(2);
                                             Output.WriteLine("[MarshalAs(UnmanagedType.LPStr)]");
-                                            generatedName = "string";
+                                            break;
+                                        case "PWSTR":
+                                        case "PCWSTR":
+                                            WriteIndent(2);
+                                            Output.WriteLine("[MarshalAs(UnmanagedType.LPWStr)]");
                                             break;
                                         default:
                                             break;
