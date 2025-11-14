@@ -24,12 +24,12 @@ namespace SrcGen
 
         readonly TextWriter Output;
         readonly Dictionary<string, string> UUIDs = [];
-        readonly Dictionary<string, (string generatedName, bool isValueType)> Types = [];
+        readonly Dictionary<string, (string managedType, bool isValueType)> Types = [];
         readonly Dictionary<string, (string type, string value, string comment)> Constants = [];
         readonly HashSet<int> InlineArrays = [];
 
-        bool TryGetGeneratedType(ReadOnlySpan<char> native, out (string generatedName, bool isValueType) managed)
-            => Types.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(native, out managed);
+        bool TryGetManagedType(ReadOnlySpan<char> nativeType, out (string name, bool isValueType) managedType)
+            => Types.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(nativeType, out managedType);
 
         public Program(TextWriter output)
         {
@@ -305,9 +305,9 @@ namespace SrcGen
                         type = line[(type.Length + 1)..space];
                     }
 
-                    if (TryGetGeneratedType(type, out var managed))
+                    if (TryGetManagedType(type, out var managedType))
                     {
-                        type = managed.generatedName;
+                        type = managedType.name;
                     }
                     else if (type.EndsWith("PCWSTR"))
                     {
@@ -631,7 +631,7 @@ namespace SrcGen
                         Debug.Assert(!nativeType.IsEmpty);
 
                         var pointerIndirections = 0;
-                        if (nativeType[0] == 'P' || nativeType.StartsWith("LP"))
+                        if (IsPointerType(nativeType))
                         {
                             pointerIndirections++;
                         }
@@ -640,19 +640,19 @@ namespace SrcGen
                             pointerIndirections++;
                         }
 
-                        string generatedName;
+                        string managedType;
                         var isValueType = true;
 
-                        if (TryGetGeneratedType(nativeType, out var managed))
+                        if (TryGetManagedType(nativeType, out var managed))
                         {
-                            generatedName = managed.generatedName;
+                            managedType = managed.name;
                             isValueType = managed.isValueType;
                         }
                         else
                         {
-                            generatedName = (nativeType[0] == 'P' ? nativeType[1..] : nativeType.StartsWith("LP") ? nativeType[2..] : nativeType).ToString();
+                            managedType = (nativeType[0] == 'P' ? nativeType[1..] : nativeType.StartsWith("LP") ? nativeType[2..] : nativeType).ToString();
 
-                            if (nativeType.EndsWith("STR"))
+                            if (nativeType.EndsWith("STR") || nativeType.SequenceEqual("FARPROC"))
                             {
                                 isValueType = false;
                             }
@@ -664,11 +664,11 @@ namespace SrcGen
                             {
                                 if (isValueType)
                                 {
-                                    generatedName = (isIn, isOut) switch
+                                    managedType = (isIn, isOut) switch
                                     {
-                                        (true, false) => $"in {generatedName}",
-                                        (false, true) => $"out {generatedName}",
-                                        (true, true) => $"ref {generatedName}",
+                                        (true, false) => $"in {managedType}",
+                                        (false, true) => $"out {managedType}",
+                                        (true, true) => $"ref {managedType}",
                                         _ => throw new UnreachableException()
                                     };
                                 }
@@ -676,7 +676,7 @@ namespace SrcGen
                                 {
                                     Debug.Assert(isIn && !isOut);
 
-                                    generatedName = "string";
+                                    managedType = "string";
 
                                     switch (nativeType)
                                     {
@@ -699,17 +699,26 @@ namespace SrcGen
                             {
                                 if (nativeType.EndsWith("VOID"))
                                 {
-                                    generatedName = "byte";
+                                    managedType = "byte";
                                 }
                                 else if (nativeType.EndsWith("STR"))
                                 {
                                     Debug.Assert(!isIn && isOut);
 
-                                    generatedName = nativeType.Contains('W') ? "char" : "byte";
+                                    managedType = nativeType.Contains('W') ? "char" : "byte";
                                 }
 
-                                generatedName = !isOut ? $"ReadOnlySpan<{generatedName}>" : $"Span<{generatedName}>";
+                                managedType = !isOut ? $"ReadOnlySpan<{managedType}>" : $"Span<{managedType}>";
                             }
+                        }
+                        else if (pointerIndirections == 2)
+                        {
+                            // We have not seen any usage of outputting an array yet.
+                            // This simpilfy the translation a lot.
+                            Debug.Assert(spanSizeExpr.IsEmpty);
+                            Debug.Assert(!isValueType);
+
+                            managedType = $"out {managedType}";
                         }
 
                         var nameAndRest = line[nativeType.Length..].TrimStart();
@@ -719,7 +728,7 @@ namespace SrcGen
                         }
 
                         WriteIndent(2);
-                        Output.WriteLine($"{generatedName} {nameAndRest}");
+                        Output.WriteLine($"{managedType} {nameAndRest}");
                     }
                     else if (line.StartsWith('.'))
                     {
@@ -741,6 +750,11 @@ namespace SrcGen
 
             Output.WriteLine("}");
             Output.WriteLine();
+        }
+
+        private static bool IsPointerType(ReadOnlySpan<char> nativeType)
+        {
+            return nativeType[0] == 'P' || nativeType.StartsWith("LP") || nativeType.SequenceEqual("FARPROC");
         }
 
         private static string SnakeToCamel(ReadOnlySpan<char> snake)

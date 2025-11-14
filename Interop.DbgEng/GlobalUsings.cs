@@ -47,3 +47,4 @@ global using LONG64 = System.Int64;
 global using HRESULT = System.Int32;
 global using GUID = System.Guid;
 global using va_list = System.ArgIterator;
+global using FARPROC = System.IntPtr;
