@@ -593,7 +593,8 @@ namespace SrcGen
 
                         var annotation = line[..line.IndexOfAny(" (")];
                         var annotationLength = annotation.Length;
-                        var isReadOnly = annotation.StartsWith("_In_");
+                        var isIn = annotation.StartsWith("_In");
+                        var isOut = annotation.Contains("out", StringComparison.OrdinalIgnoreCase);
                         var mayBeDefault = annotation.EndsWith("_opt_");
 
                         ReadOnlySpan<char> spanSizeExpr = default, writtenSizeExpr = default;
@@ -663,11 +664,17 @@ namespace SrcGen
                             {
                                 if (isValueType)
                                 {
-                                    generatedName = isReadOnly ? $"in {generatedName}" : $"out {generatedName}";
+                                    generatedName = (isIn, isOut) switch
+                                    {
+                                        (true, false) => $"in {generatedName}",
+                                        (false, true) => $"out {generatedName}",
+                                        (true, true) => $"ref {generatedName}",
+                                        _ => throw new UnreachableException()
+                                    };
                                 }
                                 else if (nativeType.EndsWith("STR"))
                                 {
-                                    Debug.Assert(isReadOnly);
+                                    Debug.Assert(isIn);
 
                                     generatedName = "string";
 
@@ -690,12 +697,18 @@ namespace SrcGen
                             }
                             else
                             {
-                                if (generatedName == "VOID")
+                                if (nativeType.EndsWith("VOID"))
                                 {
                                     generatedName = "byte";
                                 }
+                                else if (nativeType.EndsWith("STR"))
+                                {
+                                    Debug.Assert(!isIn && isOut);
 
-                                generatedName = isReadOnly ? $"ReadOnlySpan<{generatedName}>" : $"Span<{generatedName}>";
+                                    generatedName = nativeType.Contains('W') ? "char" : "byte";
+                                }
+
+                                generatedName = !isOut ? $"ReadOnlySpan<{generatedName}>" : $"Span<{generatedName}>";
                             }
                         }
 

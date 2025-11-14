@@ -418,6 +418,46 @@ public class InterfaceTests : TestsBase
     }
 
     [Fact]
+    public void TestPointerParam5()
+    {
+        AssertGenerated("""
+            [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
+            [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
+            public partial interface ISomeInterface
+            {
+                [PreserveSig]
+                HRESULT Boom
+                (
+                    // _Inout_opt_
+                    ref ULONG Name
+                );
+
+            }
+
+            public static partial class Constants
+            {
+                public static ReadOnlySpan<byte> IID_ISomeInterface => [0x53, 0x5f, 0xdf, 0xf2, 0x1f, 0x07, 0xbd, 0x47, 0x9d, 0xe6, 0x57, 0x34, 0xc3, 0xfe, 0xd6, 0x89];
+            }
+            """,
+                hppSrc: """
+            typedef interface DECLSPEC_UUID("f2df5f53-071f-47bd-9de6-5734c3fed689")
+                ISomeInterface* PSOME_INTERFACE;
+
+            #undef INTERFACE
+            #define INTERFACE ISomeInterface
+            DECLARE_INTERFACE_(ISomeInterface, IUnknown)
+            {
+                // ISomeInterface.
+                STDMETHOD(Boom)(
+                    THIS_
+                    _Inout_opt_ PULONG Name
+                    ) PURE;
+            };
+            """,
+            "");
+    }
+
+    [Fact]
     public void TestAnsiStringParam1()
     {
         AssertGenerated("""
@@ -433,7 +473,9 @@ public class InterfaceTests : TestsBase
                     string Id,
                     // _In_opt_
                     [MarshalAs(UnmanagedType.LPStr)]
-                    string Name
+                    string Name,
+                    // _Out_writes_opt_(2)
+                    Span<byte> Name1
                 );
 
             }
@@ -455,7 +497,8 @@ public class InterfaceTests : TestsBase
                 STDMETHOD(Boom)(
                     THIS_
                     _In_ PSTR Id,
-                    _In_opt_ PCSTR Name
+                    _In_opt_ PCSTR Name,
+                    _Out_writes_opt_(2) PSTR Name1
                     ) PURE;
             };
             """,
@@ -478,7 +521,9 @@ public class InterfaceTests : TestsBase
                     string Id,
                     // _In_opt_
                     [MarshalAs(UnmanagedType.LPWStr)]
-                    string Name
+                    string Name,
+                    // _Out_writes_opt_(4)
+                    Span<char> Name1
                 );
 
             }
@@ -500,7 +545,8 @@ public class InterfaceTests : TestsBase
                 STDMETHOD(Boom)(
                     THIS_
                     _In_ PWSTR Id,
-                    _In_opt_ PCWSTR Name
+                    _In_opt_ PCWSTR Name,
+                    _Out_writes_opt_(4) PWSTR Name1
                     ) PURE;
             };
             """,

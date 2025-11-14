@@ -12,6 +12,10 @@
     <PackageReference Include="Microsoft.Debugging.Platform.SymSrv" Version="20250929.1313.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.DisableRuntimeMarshalling" />
+  </ItemGroup>
+
   <Target Name="GenSrc" AfterTargets="ResolveReferences">
     <Exec Command="&quot;$(OutDir)../../SrcGen/$(Configuration)/SrcGen.exe&quot; &quot;$(MicrosoftDebuggingPlatformDbgEngContent)../build/native/inc/dbgeng.h&quot;" />
   </Target>
