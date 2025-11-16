@@ -483,7 +483,8 @@ namespace SrcGen
 
             var line = fullLine.AsSpan();
             var interfaceName = line["DECLARE_INTERFACE_(".Length..line.IndexOf(',')];
-            var wrapperType = interfaceName.Contains("Callback", StringComparison.Ordinal) ? "ManagedObjectWrapper" : "ComObjectWrapper";
+            var isCallback = interfaceName.Contains("Callback", StringComparison.Ordinal);
+            var wrapperType = isCallback ? "ManagedObjectWrapper" : "ComObjectWrapper";
 
             Output.Write($$"""
                 [GeneratedComInterface(Options = ComInterfaceOptions.{{wrapperType}})]
@@ -709,6 +710,13 @@ namespace SrcGen
                                 }
 
                                 managedType = !isOut ? $"ReadOnlySpan<{managedType}>" : $"Span<{managedType}>";
+
+                                if (isCallback && managedType == "ReadOnlySpan<byte>")
+                                {
+                                    // M$ does not provide a marshaller, use our own.
+                                    WriteIndent(2);
+                                    Output.WriteLine($"[MarshalUsing(typeof(BufferMarshaller<,>), CountElementName = \"{spanSizeExpr}\")]");
+                                }
                             }
                         }
                         else if (pointerIndirections == 2)
