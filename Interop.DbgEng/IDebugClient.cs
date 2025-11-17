@@ -7,7 +7,7 @@ public partial interface IDebugClient
 {
     static IDebugClient Create()
     {
-        DbgEngApi.DebugCreate(new Guid(Constants.IID_IDebugClient), out var pDebugClient);
+        DbgEngApi.DebugCreate(Constants.GetIid<IDebugClient>(), out var pDebugClient);
 
         var cw = new StrategyBasedComWrappers();
 
