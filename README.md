@@ -10,6 +10,10 @@ This library is created by translating the `dbgeng.h` to C# code that utilizes [
 1. Get an `IDebugClient` from the static `Interop.DbgEng.IDebugClient.Create()` method.
 1. Voila!
 
+## Example
+
+See https://github.com/DumbPrograms/PrintDmpStack
+
 ## Build
 
 Open the `DbgEngIdl.slnx` file in Visual Studio.
