@@ -503,15 +503,16 @@ namespace SrcGen
 
                             returnType = line[L..comma];
                             methodName = line[(comma + ", ".Length)..R];
+
+                            Output.WriteLine("    [PreserveSig]");
                         }
                         else
                         {
-                            returnType = "HRESULT";
+                            returnType = "void";
                             methodName = line[L..R];
                         }
 
                         Output.WriteLine($"""
-                                [PreserveSig]
                                 {returnType} {methodName}
                                 (
                             """);

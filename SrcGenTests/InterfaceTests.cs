@@ -154,8 +154,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                 );
 
@@ -179,7 +178,7 @@ public class InterfaceTests : TestsBase
     }
 
     [Fact]
-    public void TestReservedParam1()
+    public void TestEmptyMethod2()
     {
         AssertGenerated("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
@@ -187,7 +186,38 @@ public class InterfaceTests : TestsBase
             public partial interface ISomeInterface
             {
                 [PreserveSig]
-                HRESULT Boom
+                ULONG Boom
+                (
+                );
+
+            }
+            """,
+            hppSrc: """
+            typedef interface DECLSPEC_UUID("f2df5f53-071f-47bd-9de6-5734c3fed689")
+                ISomeInterface* PSOME_INTERFACE;
+
+            #undef INTERFACE
+            #define INTERFACE ISomeInterface
+            DECLARE_INTERFACE_(ISomeInterface, IUnknown)
+            {
+                // ISomeInterface.
+                STDMETHOD_(ULONG, Boom)(
+                    THIS
+                    ) PURE;
+            };
+            """,
+            "");
+    }
+
+    [Fact]
+    public void TestReservedParam1()
+    {
+        AssertGenerated("""
+            [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
+            [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
+            public partial interface ISomeInterface
+            {
+                void Boom
                 (
                     IntPtr Reserved = 0
                 );
@@ -220,8 +250,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_opt_
                     ISomeInterface Name
@@ -255,8 +284,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_opt_
                     in ULONG Name
@@ -290,8 +318,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_opt_
                     in GUID Name
@@ -331,8 +358,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_opt_
                     in DebugOffsetRegion Name
@@ -372,8 +398,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _Inout_opt_
                     ref ULONG Name
@@ -407,8 +432,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _Out_
                     out ISomeInterface Name
@@ -442,8 +466,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _Out_
                     out GUID Name
@@ -477,8 +500,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // ...
                     [In, MarshalUsing(typeof(ComVariantMarshaller), ElementIndirectionDepth = 1)]
@@ -513,8 +535,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_
                     [MarshalAs(UnmanagedType.LPStr)]
@@ -556,8 +577,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_
                     [MarshalAs(UnmanagedType.LPWStr)]
@@ -599,8 +619,7 @@ public class InterfaceTests : TestsBase
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeCallback
             {
-                [PreserveSig]
-                HRESULT Boom
+                void Boom
                 (
                     // _In_reads_bytes_(ContextSize)
                     [MarshalUsing(typeof(BufferMarshaller<,>), CountElementName = "ContextSize")]
