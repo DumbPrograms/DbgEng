@@ -2,7 +2,7 @@
 
 A .Net interop library to use the [Microsoft Debugger Engine](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/debugger-engine-overview).
 
-This library is created by translating the `dbgeng.h` into C# code that utilizes [Source Generated COM interop](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/comwrappers-source-generation).
+This library is created by translating the `dbgeng.h` to C# code that utilizes [Source Generated COM interop](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/comwrappers-source-generation).
 
 ## Get started
 
