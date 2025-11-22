@@ -114,6 +114,28 @@ public class StructTests : TestsBase
     }
 
     [Fact]
+    public void TestStruct6()
+    {
+        AssertGenerated("""
+            public struct DebugOffsetRegion
+            {
+                public ULONG64 Base;
+                // some comments
+                public ULONG64 Size;
+            }
+            """,
+            "",
+            missingSrc: """
+            typedef struct _DEBUG_OFFSET_REGION
+            {
+                ULONG64 Base;
+                // some comments
+                ULONG64 Size;
+            } DEBUG_OFFSET_REGION, *PDEBUG_OFFSET_REGION;
+            """);
+    }
+
+    [Fact]
     public void TestStructRemarks1()
     {
         AssertGenerated("""
