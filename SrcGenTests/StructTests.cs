@@ -435,14 +435,13 @@ public class StructTests : TestsBase
                 /// <remarks>
                 /// ///////
                 /// <br />
+                /// <br />
                 /// -------
                 /// <br />
                 /// <br />
                 /// In
                 /// <br />
-                /// <br />
                 /// Out
-                /// <br />
                 /// </remarks>
                 public const UINT64 X = 0x100000000; // comment
             }

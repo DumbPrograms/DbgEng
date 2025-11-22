@@ -87,17 +87,21 @@ namespace SrcGen
             {
                 LastRemarks = null;
 
-                var startsWithUpperCaseLetter = line.Length > 3 && line[2] == ' ' && Char.IsUpper(line[3]);
+                var isHorizontalLine = line.Length > 2 && line[2] is '/' or '-';
+                var startsWithCapitalLetter = line.Length > 3 && line[2] == ' ' && Char.IsUpper(line[3]);
 
-                if (startsWithUpperCaseLetter)
+                if (isHorizontalLine || startsWithCapitalLetter)
                 {
-                    RemarksBuilder.AppendLine("/// <br />");
+                    if (RemarksBuilder.Length > 0)
+                    {
+                        RemarksBuilder.AppendLine("/// <br />");
+                    }
                 }
 
                 RemarksBuilder.Append("/// ");
                 RemarksBuilder.AppendLine(SecurityElement.Escape($"{line[2..].TrimStart()}"));
 
-                if (line.Length > 2 && line[2] is '/' or '-' || startsWithUpperCaseLetter)
+                if (isHorizontalLine)
                 {
                     RemarksBuilder.AppendLine("/// <br />");
                 }
