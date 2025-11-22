@@ -114,6 +114,30 @@ public class StructTests : TestsBase
     }
 
     [Fact]
+    public void TestStructRemarks1()
+    {
+        AssertGenerated("""
+            /// <remarks>
+            /// haha
+            /// </remarks>
+            public struct DebugOffsetRegion
+            {
+                public ULONG64 Base;
+                public ULONG64 Size;
+            }
+            """,
+            hppSrc: """
+            // haha
+            typedef struct _DEBUG_OFFSET_REGION
+            {
+                ULONG64 Base;
+                ULONG64 Size;
+            } DEBUG_OFFSET_REGION, *PDEBUG_OFFSET_REGION;
+            """,
+            "");
+    }
+
+    [Fact]
     public void TestStructsRef1()
     {
         AssertGenerated("""
@@ -362,7 +386,7 @@ public class StructTests : TestsBase
     }
 
     [Fact]
-    public void TestConstant6()
+    public void TestConstantRemarks1()
     {
         AssertGenerated("""
             public static partial class Constants
@@ -381,7 +405,7 @@ public class StructTests : TestsBase
     }
 
     [Fact]
-    public void TestConstant7()
+    public void TestConstantRemarks2()
     {
         AssertGenerated("""
             public static partial class Constants
@@ -412,7 +436,7 @@ public class StructTests : TestsBase
     }
 
     [Fact]
-    public void TestConstant8()
+    public void TestConstantRemarks3()
     {
         AssertGenerated("""
             public static partial class Constants

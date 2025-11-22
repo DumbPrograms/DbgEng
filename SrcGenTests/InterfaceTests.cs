@@ -27,6 +27,34 @@ public class InterfaceTests : TestsBase
     }
 
     [Fact]
+    public void TestInterfaceRemarks1()
+    {
+        AssertGenerated("""
+            /// <remarks>
+            /// haha
+            /// </remarks>
+            [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
+            [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
+            public partial interface ISomeInterface
+            {
+            }
+            """,
+            hppSrc: """
+            typedef interface DECLSPEC_UUID("f2df5f53-071f-47bd-9de6-5734c3fed689")
+                ISomeInterface* PSOME_INTERFACE;
+
+            // haha
+            #undef INTERFACE
+            #define INTERFACE ISomeInterface
+            DECLARE_INTERFACE_(ISomeInterface, IUnknown)
+            {
+                // ISomeInterface.
+            };
+            """,
+            "");
+    }
+
+    [Fact]
     public void TestEmptyCallbackInterface1()
     {
         AssertGenerated("""

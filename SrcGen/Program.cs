@@ -209,18 +209,7 @@ namespace SrcGen
             {
                 if (def.remarks is string remarks)
                 {
-                    Output.WriteLine("    /// <remarks>");
-
-                    foreach (var line in remarks.AsSpan().EnumerateLines())
-                    {
-                        if (!line.IsEmpty)
-                        {
-                            WriteIndent(1);
-                            Output.WriteLine(line);
-                        }
-                    }
-
-                    Output.WriteLine("    /// </remarks>");
+                    WriteRemarks(remarks, indentLevel: 1);
                 }
 
                 if (def.comment is null)
@@ -237,8 +226,31 @@ namespace SrcGen
             Output.WriteLine();
         }
 
+        private void WriteRemarks(string remarks, int indentLevel = 0)
+        {
+            WriteIndent(indentLevel);
+            Output.WriteLine("/// <remarks>");
+
+            foreach (var line in remarks.AsSpan().EnumerateLines())
+            {
+                if (!line.IsEmpty)
+                {
+                    WriteIndent(indentLevel);
+                    Output.WriteLine(line);
+                }
+            }
+
+            WriteIndent(indentLevel);
+            Output.WriteLine("/// </remarks>");
+        }
+
         private void WriteStruct(TextReader hpp, string fullLine)
         {
+            if (Remarks.Length > 0)
+            {
+                WriteRemarks(Remarks.ToString());
+            }
+
             var line = fullLine.AsSpan().Trim();
             var isUnion = line["typedef ".Length] == 'u';
 
@@ -477,6 +489,11 @@ namespace SrcGen
 
         private void WriteInterface(TextReader hpp, string fullLine)
         {
+            if (Remarks.Length > 0)
+            {
+                WriteRemarks(Remarks.ToString());
+            }
+
             // See https://devblogs.microsoft.com/oldnewthing/20041005-00/?p=37653
             // What are the rules?
             //  * ...
