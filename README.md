@@ -16,12 +16,6 @@ See https://github.com/DumbPrograms/PrintDmpStack
 
 ## Build
 
-After you cloned this repository, run the following commands within it to get the docs from Microsoft:
-
-```cmd
-git clone --filter=tree:0 --sparse https://github.com/MicrosoftDocs/windows-driver-docs-ddi msdocs
-cd msdocs
-git sparse-checkout set wdk-ddi-src/content/dbgeng
-```
-
-Open the `DbgEngIdl.slnx` file in Visual Studio.
+1. Clone this repository.
+1. Run `PullDocs.bat` to get the docs from Microsoft.
+1. Open the `DbgEngIdl.slnx` file in Visual Studio.
