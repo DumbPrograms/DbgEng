@@ -18,7 +18,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageId>DumbPrograms.DbgEng</PackageId>
-    <Version>1.1.2025.0929</Version>
+    <Version>1.2.2025.0929</Version>
     <Authors>diryboy</Authors>
     <Title>.Net library to use dbgeng.h</Title>
     <Description>.Net interop library to use dbgeng.h</Description>
