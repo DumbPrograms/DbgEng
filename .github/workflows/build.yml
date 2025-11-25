@@ -12,7 +12,7 @@ jobs:
         conf: ["debug", "release"]
     steps:
       - uses: actions/checkout@v5
-      - run: PullDocs.bat
+      - run: ./PullDocs.bat
       
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
