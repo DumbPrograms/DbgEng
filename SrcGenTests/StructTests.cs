@@ -5,7 +5,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestIngore1()
     {
-        AssertGenerated(
+        AssertGeneratedWithMissing(
             "",
             hppSrc: """
             #ifndef _WDBGEXTS_
@@ -19,7 +19,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ULONG64 Base;
@@ -39,7 +39,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ULONG64 Base;
@@ -59,7 +59,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct3()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ULONG64 Base; // comment
@@ -79,7 +79,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct4()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 [MarshalAs(UnmanagedType.LPWStr)]
@@ -98,7 +98,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct5()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public IntPtr/*PVOID*/ Base; // comment
@@ -116,7 +116,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStruct6()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ULONG64 Base;
@@ -138,7 +138,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStructRemarks1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             /// <remarks>
             /// haha
             /// </remarks>
@@ -162,7 +162,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestStructsRef1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct REF
             {
                 public ULONG64 Size;
@@ -190,7 +190,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestNested1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [StructLayout(LayoutKind.Explicit)]
             public struct InlineFrameContext
             {
@@ -258,7 +258,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestNested2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugValue
             {
 
@@ -335,7 +335,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstant1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 public const UINT32 X = 0;
@@ -350,7 +350,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstant2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 public const UINT32 X = 0;
@@ -365,7 +365,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstant3()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 public const UINT32 X = 0; // comment
@@ -380,7 +380,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstant4()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 public const DWORD EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
@@ -395,7 +395,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstant5()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 public const UINT64 X = 0x100000000; // comment
@@ -410,7 +410,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstantRemarks1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 /// <remarks>
@@ -429,7 +429,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstantRemarks2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 /// <remarks>
@@ -459,7 +459,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstantRemarks3()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 /// <remarks>
@@ -478,7 +478,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstantRemarks4()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 /// <remarks>
@@ -503,7 +503,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestConstantRemarks5()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public static partial class Constants
             {
                 /// <remarks>
@@ -524,7 +524,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestInlineArray1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ArrayOf3<ULONG64> Base;
@@ -547,7 +547,7 @@ public class StructTests : TestsBase
     [Fact]
     public void TestInlineArray2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct ExceptionRecord64
             {
                 public ArrayOf15<LONGLONG> ExceptionInformation;

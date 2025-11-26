@@ -4,18 +4,38 @@ namespace SrcGenTests;
 
 public class TestsBase
 {
-    protected static void AssertGenerated(string expected, string hppSrc, string missingSrc)
+    protected static void AssertGeneratedWithMissing(string expected, string hppSrc, string missingSrc)
     {
         var hpp = new StringReader(hppSrc);
         var missing = new StringReader(missingSrc);
         var sb = new StringBuilder();
 
-        var program = new SrcGen.Program(new StringWriter(sb));
-        program.Generate(hpp, missing);
+        var translator = new SrcGen.Translator(new StringWriter(sb), Documents.Empty);
+        translator.Generate(hpp, missing);
 
-        var result = sb.ToString();
+        AssertLinesEqual(expected, sb.ToString());
+    }
+
+    protected static void AssertGeneratedWithDocuments(string expected, string hppSrc, params string[] documents)
+    {
+        var hpp = new StringReader(hppSrc);
+        var missing = StreamReader.Null;
+        var sb = new StringBuilder();
+
+        var docs = new Documents();
+        docs.Parse(documents.Select(text => new StringReader(text)));
+
+        var translator = new SrcGen.Translator(new StringWriter(sb), docs);
+
+        translator.Generate(hpp, missing);
+
+        AssertLinesEqual(expected, sb.ToString());
+    }
+
+    protected static void AssertLinesEqual(string expected, string result)
+    {
         var resultLines = result.AsSpan().Trim().EnumerateLines();
-        var expectLines = (SrcGen.Program.GeneratedHeader + Environment.NewLine + expected).AsSpan().Trim().EnumerateLines();
+        var expectLines = (SrcGen.Translator.GeneratedHeader + Environment.NewLine + expected).AsSpan().Trim().EnumerateLines();
 
         while (expectLines.MoveNext())
         {

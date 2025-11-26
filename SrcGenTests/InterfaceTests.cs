@@ -5,7 +5,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyInterface1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -29,7 +29,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyCallbackInterface1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ManagedObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeCallback
@@ -53,7 +53,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyInterface2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -93,7 +93,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyInterface3()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5453-071f-47bd-9de6-5734c3fe6489")]
             public partial interface ISomeInterface3 : ISomeInterface2
@@ -149,7 +149,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyMethod1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -180,7 +180,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestEmptyMethod2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -213,7 +213,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestMethodRemarks()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -251,7 +251,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestReservedParam1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -284,7 +284,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -318,7 +318,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam2()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -352,7 +352,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam3()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -386,7 +386,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam4()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             public struct DebugOffsetRegion
             {
                 public ULONG64 Base;
@@ -432,7 +432,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam5()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -466,7 +466,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam6()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -500,7 +500,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestPointerParam7()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -534,7 +534,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestDotDotDotParam1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -569,7 +569,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestAnsiStringParam1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -611,7 +611,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestWideStringParam1()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ComObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeInterface
@@ -653,7 +653,7 @@ public class InterfaceTests : TestsBase
     [Fact]
     public void TestInBufferParamForCallbacks()
     {
-        AssertGenerated("""
+        AssertGeneratedWithMissing("""
             [GeneratedComInterface(Options = ComInterfaceOptions.ManagedObjectWrapper)]
             [Guid("f2df5f53-071f-47bd-9de6-5734c3fed689")]
             public partial interface ISomeCallback
