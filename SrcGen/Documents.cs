@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace SrcGen;
 
@@ -26,6 +27,9 @@ public class Documents
 
         return documents;
     }
+
+    public bool TryGetSummary(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string summary)
+        => Summaries.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(name, out summary);
 
     public void Parse(IEnumerable<TextReader> readers)
     {
