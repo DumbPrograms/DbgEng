@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using SrcGen;
 
 namespace SrcGenTests;
 
@@ -10,7 +11,7 @@ public class TestsBase
         var missing = new StringReader(missingSrc);
         var sb = new StringBuilder();
 
-        var translator = new SrcGen.Translator(new StringWriter(sb), Documents.Empty);
+        var translator = new Translator(new StringWriter(sb), Documents.Empty);
         translator.Generate(hpp, missing);
 
         AssertLinesEqual(expected, sb.ToString());
@@ -25,7 +26,7 @@ public class TestsBase
         var docs = new Documents();
         docs.Parse(documents.Select(text => new StringReader(text)));
 
-        var translator = new SrcGen.Translator(new StringWriter(sb), docs);
+        var translator = new Translator(new StringWriter(sb), docs);
 
         translator.Generate(hpp, missing);
 
@@ -35,7 +36,7 @@ public class TestsBase
     protected static void AssertLinesEqual(string expected, string result)
     {
         var resultLines = result.AsSpan().Trim().EnumerateLines();
-        var expectLines = (SrcGen.Translator.GeneratedHeader + Environment.NewLine + expected).AsSpan().Trim().EnumerateLines();
+        var expectLines = (Translator.GeneratedHeader + Environment.NewLine + expected).AsSpan().Trim().EnumerateLines();
 
         while (expectLines.MoveNext())
         {
