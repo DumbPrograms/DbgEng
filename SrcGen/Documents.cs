@@ -31,6 +31,18 @@ public class Documents
     public bool TryGetSummary(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string summary)
         => Summaries.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(name, out summary);
 
+    public bool TryGetMembers(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out IReadOnlyList<string> members)
+    {
+        if (Members.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(name, out var list))
+        {
+            members = list;
+            return true;
+        }
+
+        members = null;
+        return false;
+    }
+
     public void Parse(IEnumerable<TextReader> readers)
     {
         foreach (var reader in readers)
@@ -72,7 +84,7 @@ public class Documents
                 ParseFunction(uid[UidDbgEngPrefix.Length..], reader);
                 return;
             case 'S':
-                ParseStruct(uid[UidDbgEngPrefix.Length..], reader);
+                ParseStruct(uid[(UidDbgEngPrefix.Length + 1)..], reader);
                 return;
 
             default:
@@ -88,29 +100,26 @@ public class Documents
 
     private void ParseFunction(ReadOnlySpan<char> functionName, TextReader reader)
     {
-        var fullLine = reader.SeekLineWithPrefix(DescriptionPrefix);
-        Summaries.Add(functionName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
-
-        reader.SeekLineWithPrefix("api_type:");
-        fullLine = reader.ReadLine();
-
-        if (fullLine is null || fullLine.Contains("DllExport"))
+        var dot = functionName.IndexOf('.');
+        if (dot < 0)
         {
-            // we hand write those, skip
+            // DllExports, we hand write those, skip
             return;
         }
 
-        AddMember(functionName[..functionName.IndexOf('.')], functionName.ToString());
+        var fullLine = reader.SeekLineWithPrefix(DescriptionPrefix);
+        Summaries.Add(functionName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
+
+        AddMember(functionName[..dot], functionName.ToString());
 
         const string memberHeader = "### -param ";
         var descriptionBuilder = new StringBuilder();
 
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
-            while (true)
+            var parameterName = memberLine.AsSpan(memberHeader.Length).Trim();
+            do
             {
-                var parameterName = memberLine.AsSpan(memberHeader.Length).Trim();
-
                 var space = parameterName.IndexOf(' ');
                 if (space > 0)
                 {
@@ -118,12 +127,8 @@ public class Documents
                 }
 
                 parameterName = ParseMemberDescription(functionName, parameterName, reader, descriptionBuilder, memberHeader);
-
-                if (parameterName.IsEmpty)
-                {
-                    break;
-                }
             }
+            while (!parameterName.IsEmpty);
         }
     }
 
@@ -137,17 +142,12 @@ public class Documents
 
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
-            while (true)
+            var fieldName = memberLine.AsSpan(memberHeader.Length).Trim();
+            do
             {
-                var fieldName = memberLine.AsSpan(memberHeader.Length).Trim();
-
                 fieldName = ParseMemberDescription(structName, fieldName, reader, descriptionBuilder, memberHeader);
-
-                if (fieldName.IsEmpty)
-                {
-                    break;
-                }
             }
+            while (!fieldName.IsEmpty);
         }
     }
 
@@ -164,7 +164,7 @@ public class Documents
             {
                 var description = builder.ToString();
 
-                Summaries.Add(lookupName, description);
+                Summaries.Add(lookupName, description.Trim());
 
                 return fullLine.AsSpan()[memberHeader.Length..].Trim();
             }
@@ -174,7 +174,7 @@ public class Documents
 
         var description1 = builder.ToString();
 
-        Summaries.Add(lookupName, description1);
+        Summaries.Add(lookupName, description1.Trim());
 
         return [];
     }
