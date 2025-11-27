@@ -410,11 +410,11 @@ namespace SrcGen
 
         private void WriteNestedStruct(TextReader hpp, ReadOnlySpan<char> topStructName, string fullLine, int level, int index, bool insideUnion)
         {
-            Output.WriteLine();
-            WriteRemarks($"{level} level under {topStructName}", level);
-
             var line = fullLine.AsSpan().Trim();
             var isUnion = line[0] == 'u';
+
+            Output.WriteLine();
+            WriteRemarks($"A {(isUnion ? "union" : "struct")} that's {level} level(s) under {topStructName}", level);
 
             ReadOnlySpan<char> structName;
 
@@ -456,6 +456,8 @@ namespace SrcGen
             {
                 memberName = line[(line.IndexOf(' ') + 1)..line.IndexOf(';')];
             }
+
+            WriteRemarks($"Access <see cref=\"_{structName}\" />", level);
 
             WriteIndent(level);
 

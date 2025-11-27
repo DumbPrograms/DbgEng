@@ -197,7 +197,7 @@ public class StructTests : TestsBase
                 [FieldOffset(0)] public DWORD ContextValue;
 
                 /// <remarks>
-                /// 1 level under INLINE_FRAME_CONTEXT
+                /// A struct that's 1 level(s) under INLINE_FRAME_CONTEXT
                 /// </remarks>
                 public partial struct _NestedStruct1
                 {
@@ -205,10 +205,13 @@ public class StructTests : TestsBase
                     public WORD FrameSignature;
                 }
 
+                /// <remarks>
+                /// Access <see cref="_NestedStruct1" />
+                /// </remarks>
                 [FieldOffset(0)] public _NestedStruct1 NestedStruct1;
 
                 /// <remarks>
-                /// 1 level under INLINE_FRAME_CONTEXT
+                /// A struct that's 1 level(s) under INLINE_FRAME_CONTEXT
                 /// </remarks>
                 public partial struct _NestedStruct2
                 {
@@ -216,10 +219,13 @@ public class StructTests : TestsBase
                     public WORD FrameSignature;
                 }
 
+                /// <remarks>
+                /// Access <see cref="_NestedStruct2" />
+                /// </remarks>
                 [FieldOffset(0)] public _NestedStruct2 Named;
 
                 /// <remarks>
-                /// 1 level under INLINE_FRAME_CONTEXT
+                /// A union that's 1 level(s) under INLINE_FRAME_CONTEXT
                 /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion3
@@ -228,10 +234,13 @@ public class StructTests : TestsBase
                     [FieldOffset(0)] public WORD FrameSignature;
                 }
 
+                /// <remarks>
+                /// Access <see cref="_NestedUnion3" />
+                /// </remarks>
                 [FieldOffset(0)] public _NestedUnion3 NestedUnion3;
 
                 /// <remarks>
-                /// 1 level under INLINE_FRAME_CONTEXT
+                /// A union that's 1 level(s) under INLINE_FRAME_CONTEXT
                 /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion4
@@ -240,6 +249,9 @@ public class StructTests : TestsBase
                     [FieldOffset(0)] public WORD FrameSignature;
                 }
 
+                /// <remarks>
+                /// Access <see cref="_NestedUnion4" />
+                /// </remarks>
                 [FieldOffset(0)] public _NestedUnion4 Named1;
             }
             """,
@@ -275,7 +287,7 @@ public class StructTests : TestsBase
             {
 
                 /// <remarks>
-                /// 1 level under DEBUG_VALUE
+                /// A union that's 1 level(s) under DEBUG_VALUE
                 /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion1
@@ -283,7 +295,7 @@ public class StructTests : TestsBase
                     [FieldOffset(0)] public UCHAR I8;
 
                     /// <remarks>
-                    /// 2 level under DEBUG_VALUE
+                    /// A struct that's 2 level(s) under DEBUG_VALUE
                     /// </remarks>
                     public partial struct _NestedStruct1
                     {
@@ -294,10 +306,13 @@ public class StructTests : TestsBase
                         public BOOL Nat;
                     }
 
+                    /// <remarks>
+                    /// Access <see cref="_NestedStruct1" />
+                    /// </remarks>
                     [FieldOffset(0)] public _NestedStruct1 NestedStruct1;
 
                     /// <remarks>
-                    /// 2 level under DEBUG_VALUE
+                    /// A struct that's 2 level(s) under DEBUG_VALUE
                     /// </remarks>
                     public partial struct _NestedStruct2
                     {
@@ -305,10 +320,13 @@ public class StructTests : TestsBase
                         public ULONG HighPart;
                     }
 
+                    /// <remarks>
+                    /// Access <see cref="_NestedStruct2" />
+                    /// </remarks>
                     [FieldOffset(0)] public _NestedStruct2 I64Parts32;
 
                     /// <remarks>
-                    /// 2 level under DEBUG_VALUE
+                    /// A struct that's 2 level(s) under DEBUG_VALUE
                     /// </remarks>
                     public partial struct _NestedStruct3
                     {
@@ -316,9 +334,15 @@ public class StructTests : TestsBase
                         public LONG64 HighPart;
                     }
 
+                    /// <remarks>
+                    /// Access <see cref="_NestedStruct3" />
+                    /// </remarks>
                     [FieldOffset(0)] public _NestedStruct3 F128Parts64;
                 }
 
+                /// <remarks>
+                /// Access <see cref="_NestedUnion1" />
+                /// </remarks>
                 public _NestedUnion1 NestedUnion1;
                 public ULONG TailOfRawBytes;
                 public ULONG Type;
