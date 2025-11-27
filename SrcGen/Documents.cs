@@ -147,9 +147,7 @@ public class Documents
                 }
 
                 var parameterNameString = parameterName.ToString();
-
-                parameterName = ParseMemberDescription(reader, descriptionBuilder, memberHeader);
-                var description = descriptionBuilder.ToString();
+                var description = ParseMemberDescription(reader, descriptionBuilder, memberHeader, out parameterName);
 
                 parameters.Add((parameterNameString, description.Trim()));
             }
@@ -178,9 +176,7 @@ public class Documents
             do
             {
                 var fieldNameString = fieldName.ToString();
-
-                fieldName = ParseMemberDescription(reader, descriptionBuilder, memberHeader);
-                var description = descriptionBuilder.ToString();
+                var description = ParseMemberDescription(reader, descriptionBuilder, memberHeader, out fieldName);
 
                 fields.Add(fieldNameString, description.Trim());
             }
@@ -188,7 +184,7 @@ public class Documents
         }
     }
 
-    private static ReadOnlySpan<char> ParseMemberDescription(TextReader reader, StringBuilder builder, string memberHeader)
+    private static string ParseMemberDescription(TextReader reader, StringBuilder builder, string memberHeader, out ReadOnlySpan<char> memberName)
     {
         builder.Clear();
 
@@ -196,7 +192,8 @@ public class Documents
         {
             if (fullLine.StartsWith(memberHeader))
             {
-                return fullLine.AsSpan()[memberHeader.Length..].Trim();
+                memberName = fullLine.AsSpan()[memberHeader.Length..].Trim();
+                return builder.ToString();
             }
             else if (fullLine.StartsWith("## ") || fullLine.StartsWith("# "))
             {
@@ -206,7 +203,8 @@ public class Documents
             builder.AppendLine(fullLine);
         }
 
-        return [];
+        memberName = [];
+        return builder.ToString();
     }
 
     private void AddMemberSummary(ReadOnlySpan<char> parent, string child, string summary)
