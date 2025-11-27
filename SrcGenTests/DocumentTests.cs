@@ -80,13 +80,10 @@ public class DocumentTests : TestsBase
         Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", out var summary));
         Assert.Equal("Blah la la", summary);
 
-        Assert.True(documents.TryGetMembers("DEBUG_BREAKPOINT_PARAMETERS", out var members));
-        Assert.Equal(["DEBUG_BREAKPOINT_PARAMETERS.Offset", "DEBUG_BREAKPOINT_PARAMETERS.Id"], members);
-
-        Assert.True(documents.TryGetSummary(members[0], out summary));
+        Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", "Offset", out summary));
         Assert.Equal("Lorem ipsum sit domit", summary);
 
-        Assert.True(documents.TryGetSummary(members[1], out summary));
+        Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", "Id", out summary));
         Assert.Equal("Je <a href=\"wewe\">ha jit mi</a>.", summary);
     }
 
@@ -147,9 +144,6 @@ public class DocumentTests : TestsBase
         ]);
 
         Assert.False(documents.TryGetSummary("DebugCreate", out _));
-        Assert.False(documents.TryGetMembers("DebugCreate", out _));
-        Assert.False(documents.TryGetSummary("DebugCreate.InterfaceId", out _));
-        Assert.False(documents.TryGetSummary("DebugCreate.Interface", out _));
     }
 
     [Fact]
@@ -170,14 +164,11 @@ public class DocumentTests : TestsBase
                 """)
         ]);
 
-        Assert.True(documents.TryGetSummary("IDebugClient.EndSession", out var summary));
+        Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out var summary));
         Assert.Equal("The EndSession method ends ...", summary);
 
-        Assert.True(documents.TryGetMembers("IDebugClient.EndSession", out var members));
-        Assert.Equal(["IDebugClient.EndSession.Flags"], members);
-
-        Assert.True(documents.TryGetSummary(members[0], out summary));
-        Assert.Equal("Lorem ipsum sit domit", summary);
+        Assert.True(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
+        Assert.Equal([("Flags", "Lorem ipsum sit domit")], parameters);
     }
 
 
@@ -195,7 +186,7 @@ public class DocumentTests : TestsBase
 
                 ### -param Flags [in]
 
-                Lorem ipsum sit domit                
+                Lorem ipsum sit domit
                 """),
             new StringReader("""
                 ---
@@ -208,16 +199,10 @@ public class DocumentTests : TestsBase
         Assert.True(documents.TryGetSummary("IDebugClient", out var summary));
         Assert.Equal("IDebugClient interface", summary);
 
-        Assert.True(documents.TryGetMembers("IDebugClient", out var members));
-        Assert.Equal(["IDebugClient.EndSession"], members);
-
-        Assert.True(documents.TryGetSummary("IDebugClient.EndSession", out summary));
+        Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out summary));
         Assert.Equal("The EndSession method ends ...", summary);
 
-        Assert.True(documents.TryGetMembers("IDebugClient.EndSession", out members));
-        Assert.Equal(["IDebugClient.EndSession.Flags"], members);
-
-        Assert.True(documents.TryGetSummary("IDebugClient.EndSession.Flags", out summary));
-        Assert.Equal("Lorem ipsum sit domit", summary);
+        Assert.True(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
+        Assert.Equal([("Flags", "Lorem ipsum sit domit")], parameters);
     }
 }

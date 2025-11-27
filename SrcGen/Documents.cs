@@ -9,8 +9,9 @@ public class Documents
     const string UidDbgEngPrefix = "Nx:dbgeng.";
     const string DescriptionPrefix = "description:";
 
-    readonly Dictionary<string, string> Summaries = [];
-    readonly Dictionary<string, List<string>> Members = [];
+    readonly Dictionary<string, string> TypeSummaries = [];
+    readonly Dictionary<string, Dictionary<string, string>> MemberSummaries = [];
+    readonly Dictionary<string, List<(string name, string summary)>> Parameters = [];
 
     public static Documents Empty { get; } = new();
 
@@ -28,18 +29,30 @@ public class Documents
         return documents;
     }
 
-    public bool TryGetSummary(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out string summary)
-        => Summaries.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(name, out summary);
+    public bool TryGetSummary(ReadOnlySpan<char> type, [MaybeNullWhen(false)] out string summary)
+        => TypeSummaries.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(type, out summary);
 
-    public bool TryGetMembers(ReadOnlySpan<char> name, [MaybeNullWhen(false)] out IReadOnlyList<string> members)
+    public bool TryGetSummary(ReadOnlySpan<char> type, ReadOnlySpan<char> member, [MaybeNullWhen(false)] out string summary)
     {
-        if (Members.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(name, out var list))
+        if (MemberSummaries.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(type, out var members)
+            && members.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(member, out summary))
         {
-            members = list;
             return true;
         }
 
-        members = null;
+        summary = null;
+        return false;
+    }
+
+    public bool TryGetParameters(ReadOnlySpan<char> type, ReadOnlySpan<char> method, [MaybeNullWhen(false)] out IReadOnlyList<(string name, string summary)> parameters)
+    {
+        if (Parameters.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue([.. type, '.', .. method], out var list))
+        {
+            parameters = list;
+            return true;
+        }
+
+        parameters = null;
         return false;
     }
 
@@ -70,9 +83,9 @@ public class Documents
         switch (uid[1])
         {
             case 'A':
-                // index page, no use, skip
+            // index page, no use, skip
             case 'C':
-                // callback functions, skip for now
+            // callback functions, skip for now
             case 'L':
                 // IXyzCallbacks base implementations, skip
                 return;
@@ -95,7 +108,7 @@ public class Documents
     private void ParseInterface(ReadOnlySpan<char> name, TextReader reader)
     {
         var fullLine = reader.SeekLineWithPrefix(DescriptionPrefix);
-        Summaries.Add(name.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
+        TypeSummaries.Add(name.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
     }
 
     private void ParseFunction(ReadOnlySpan<char> functionName, TextReader reader)
@@ -108,9 +121,9 @@ public class Documents
         }
 
         var fullLine = reader.SeekLineWithPrefix(DescriptionPrefix);
-        Summaries.Add(functionName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
+        var summary = fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString();
 
-        AddMember(functionName[..dot], functionName.ToString());
+        AddMemberSummary(functionName[..dot], functionName[(dot + 1)..].ToString(), summary);
 
         const string memberHeader = "### -param ";
         var descriptionBuilder = new StringBuilder();
@@ -118,6 +131,13 @@ public class Documents
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
             var parameterName = memberLine.AsSpan(memberHeader.Length).Trim();
+            var lookup = Parameters.GetAlternateLookup<ReadOnlySpan<char>>();
+
+            if (!lookup.TryGetValue(functionName, out var parameters))
+            {
+                lookup[functionName] = parameters = [];
+            }
+
             do
             {
                 var space = parameterName.IndexOf(' ');
@@ -126,7 +146,12 @@ public class Documents
                     parameterName = parameterName[..space];
                 }
 
-                parameterName = ParseMemberDescription(functionName, parameterName, reader, descriptionBuilder, memberHeader);
+                var parameterNameString = parameterName.ToString();
+
+                parameterName = ParseMemberDescription(reader, descriptionBuilder, memberHeader);
+                var description = descriptionBuilder.ToString();
+
+                parameters.Add((parameterNameString, description.Trim()));
             }
             while (!parameterName.IsEmpty);
         }
@@ -135,7 +160,7 @@ public class Documents
     private void ParseStruct(ReadOnlySpan<char> structName, TextReader reader)
     {
         var fullLine = reader.SeekLineWithPrefix(DescriptionPrefix);
-        Summaries.Add(structName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
+        TypeSummaries.Add(structName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
 
         const string memberHeader = "### -field ";
         var descriptionBuilder = new StringBuilder();
@@ -143,53 +168,56 @@ public class Documents
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
             var fieldName = memberLine.AsSpan(memberHeader.Length).Trim();
+            var memberLookup = MemberSummaries.GetAlternateLookup<ReadOnlySpan<char>>();
+
+            if (!memberLookup.TryGetValue(structName, out var fields))
+            {
+                memberLookup[structName] = fields = [];
+            }
+
             do
             {
-                fieldName = ParseMemberDescription(structName, fieldName, reader, descriptionBuilder, memberHeader);
+                var fieldNameString = fieldName.ToString();
+
+                fieldName = ParseMemberDescription(reader, descriptionBuilder, memberHeader);
+                var description = descriptionBuilder.ToString();
+
+                fields.Add(fieldNameString, description.Trim());
             }
             while (!fieldName.IsEmpty);
         }
     }
 
-    private ReadOnlySpan<char> ParseMemberDescription(ReadOnlySpan<char> parentName, ReadOnlySpan<char> memberName, TextReader reader, StringBuilder builder, string memberHeader)
+    private static ReadOnlySpan<char> ParseMemberDescription(TextReader reader, StringBuilder builder, string memberHeader)
     {
-        var lookupName = $"{parentName}.{memberName}";
-        AddMember(parentName, lookupName);
-
         builder.Clear();
 
         while (reader.ReadLine() is string fullLine)
         {
             if (fullLine.StartsWith(memberHeader))
             {
-                var description = builder.ToString();
-
-                Summaries.Add(lookupName, description.Trim());
-
                 return fullLine.AsSpan()[memberHeader.Length..].Trim();
+            }
+            else if (fullLine.StartsWith("## ") || fullLine.StartsWith("# "))
+            {
+                break;
             }
 
             builder.AppendLine(fullLine);
         }
 
-        var description1 = builder.ToString();
-
-        Summaries.Add(lookupName, description1.Trim());
-
         return [];
     }
 
-    private void AddMember(ReadOnlySpan<char> parent, string child)
+    private void AddMemberSummary(ReadOnlySpan<char> parent, string child, string summary)
     {
-        var lookup = Members.GetAlternateLookup<ReadOnlySpan<char>>();
+        var lookup = MemberSummaries.GetAlternateLookup<ReadOnlySpan<char>>();
 
-        if (lookup.TryGetValue(parent, out var list))
+        if (!lookup.TryGetValue(parent, out var members))
         {
-            list.Add(child);
+            lookup[parent] = members = [];
         }
-        else
-        {
-            lookup[parent] = [child];
-        }
+
+        members.Add(child, summary);
     }
 }
