@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace SrcGen;
@@ -126,7 +127,6 @@ public class Documents
         AddMemberSummary(functionName[..dot], functionName[(dot + 1)..].ToString(), summary);
 
         const string memberHeader = "### -param ";
-        var descriptionBuilder = new StringBuilder();
 
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
@@ -147,7 +147,7 @@ public class Documents
                 }
 
                 var parameterNameString = parameterName.ToString();
-                var description = ParseMemberDescription(reader, descriptionBuilder, memberHeader, out parameterName);
+                var description = ParseMemberDescription(reader, memberHeader, out parameterName);
 
                 parameters.Add((parameterNameString, description.Trim()));
             }
@@ -161,7 +161,6 @@ public class Documents
         TypeSummaries.Add(structName.ToString(), fullLine.AsSpan(DescriptionPrefix.Length).Trim().ToString());
 
         const string memberHeader = "### -field ";
-        var descriptionBuilder = new StringBuilder();
 
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
@@ -176,7 +175,7 @@ public class Documents
             do
             {
                 var fieldNameString = fieldName.ToString();
-                var description = ParseMemberDescription(reader, descriptionBuilder, memberHeader, out fieldName);
+                var description = ParseMemberDescription(reader, memberHeader, out fieldName);
 
                 fields.Add(fieldNameString, description.Trim());
             }
@@ -184,27 +183,28 @@ public class Documents
         }
     }
 
-    private static string ParseMemberDescription(TextReader reader, StringBuilder builder, string memberHeader, out ReadOnlySpan<char> memberName)
+    private static string ParseMemberDescription(TextReader reader, string memberHeader, out ReadOnlySpan<char> memberName)
     {
-        builder.Clear();
+        var builder = new DefaultInterpolatedStringHandler(512, 1);
 
         while (reader.ReadLine() is string fullLine)
         {
             if (fullLine.StartsWith(memberHeader))
             {
                 memberName = fullLine.AsSpan()[memberHeader.Length..].Trim();
-                return builder.ToString();
+                return builder.ToStringAndClear();
             }
             else if (fullLine.StartsWith("## ") || fullLine.StartsWith("# "))
             {
                 break;
             }
 
-            builder.AppendLine(fullLine);
+            builder.AppendLiteral(fullLine);
+            builder.AppendLiteral(Environment.NewLine);
         }
 
         memberName = [];
-        return builder.ToString();
+        return builder.ToStringAndClear();
     }
 
     private void AddMemberSummary(ReadOnlySpan<char> parent, string child, string summary)
