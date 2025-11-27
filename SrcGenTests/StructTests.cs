@@ -196,6 +196,9 @@ public class StructTests : TestsBase
             {
                 [FieldOffset(0)] public DWORD ContextValue;
 
+                /// <remarks>
+                /// 1 level under INLINE_FRAME_CONTEXT
+                /// </remarks>
                 public partial struct _NestedStruct1
                 {
                     public BYTE FrameId;
@@ -204,6 +207,9 @@ public class StructTests : TestsBase
 
                 [FieldOffset(0)] public _NestedStruct1 NestedStruct1;
 
+                /// <remarks>
+                /// 1 level under INLINE_FRAME_CONTEXT
+                /// </remarks>
                 public partial struct _NestedStruct2
                 {
                     public BYTE FrameType;
@@ -212,6 +218,9 @@ public class StructTests : TestsBase
 
                 [FieldOffset(0)] public _NestedStruct2 Named;
 
+                /// <remarks>
+                /// 1 level under INLINE_FRAME_CONTEXT
+                /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion3
                 {
@@ -221,6 +230,9 @@ public class StructTests : TestsBase
 
                 [FieldOffset(0)] public _NestedUnion3 NestedUnion3;
 
+                /// <remarks>
+                /// 1 level under INLINE_FRAME_CONTEXT
+                /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion4
                 {
@@ -262,11 +274,17 @@ public class StructTests : TestsBase
             public partial struct DebugValue
             {
 
+                /// <remarks>
+                /// 1 level under DEBUG_VALUE
+                /// </remarks>
                 [StructLayout(LayoutKind.Explicit)]
                 public partial struct _NestedUnion1
                 {
                     [FieldOffset(0)] public UCHAR I8;
 
+                    /// <remarks>
+                    /// 2 level under DEBUG_VALUE
+                    /// </remarks>
                     public partial struct _NestedStruct1
                     {
                         // Extra NAT indicator for IA64
@@ -278,6 +296,9 @@ public class StructTests : TestsBase
 
                     [FieldOffset(0)] public _NestedStruct1 NestedStruct1;
 
+                    /// <remarks>
+                    /// 2 level under DEBUG_VALUE
+                    /// </remarks>
                     public partial struct _NestedStruct2
                     {
                         public ULONG LowPart;
@@ -286,6 +307,9 @@ public class StructTests : TestsBase
 
                     [FieldOffset(0)] public _NestedStruct2 I64Parts32;
 
+                    /// <remarks>
+                    /// 2 level under DEBUG_VALUE
+                    /// </remarks>
                     public partial struct _NestedStruct3
                     {
                         public ULONG64 LowPart;

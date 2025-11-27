@@ -298,13 +298,13 @@ namespace SrcGen
             Output.WriteLine($"public partial struct {generatedStructName}");
             Output.WriteLine("{");
 
-            WriteStructBody(hpp, 0, isUnion);
+            WriteStructBody(hpp, structName, 0, isUnion);
 
             Output.WriteLine("}");
             Output.WriteLine();
         }
 
-        private string? WriteStructBody(TextReader hpp, int level, bool isUnion)
+        private string? WriteStructBody(TextReader hpp, ReadOnlySpan<char> topStructName, int level, bool isUnion)
         {
             var nestedStructs = 0;
 
@@ -323,7 +323,7 @@ namespace SrcGen
                 }
                 else if (line.StartsWith("struct") || line.StartsWith("union"))
                 {
-                    WriteNestedStruct(hpp, fullLine, level + 1, ++nestedStructs, isUnion);
+                    WriteNestedStruct(hpp, topStructName, fullLine, level + 1, ++nestedStructs, isUnion);
                 }
                 else if (line.StartsWith('}'))
                 {
@@ -400,9 +400,10 @@ namespace SrcGen
             return null;
         }
 
-        private void WriteNestedStruct(TextReader hpp, string fullLine, int level, int index, bool insideUnion)
+        private void WriteNestedStruct(TextReader hpp, ReadOnlySpan<char> topStructName, string fullLine, int level, int index, bool insideUnion)
         {
             Output.WriteLine();
+            WriteRemarks($"{level} level under {topStructName}", level);
 
             var line = fullLine.AsSpan().Trim();
             var isUnion = line[0] == 'u';
@@ -432,7 +433,7 @@ namespace SrcGen
             WriteIndent(level);
             Output.WriteLine('{');
 
-            fullLine = WriteStructBody(hpp, level, isUnion)!;
+            fullLine = WriteStructBody(hpp, topStructName, level, isUnion)!;
             line = fullLine.AsSpan().Trim();
 
             WriteIndent(level);
