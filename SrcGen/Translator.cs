@@ -347,7 +347,6 @@ namespace SrcGen
                     }
                     else if (type.EndsWith("PCWSTR"))
                     {
-                        Output.WriteLine("    [MarshalAs(UnmanagedType.LPWStr)]");
                         type = "string";
                     }
                     else if (type.StartsWith('P'))
@@ -375,6 +374,16 @@ namespace SrcGen
                     else
                     {
                         memberName = memberName[..memberName.IndexOf(';')];
+                    }
+
+                    if (Docs.TryGetSummary(topStructName, memberName.Trim(), out var summary))
+                    {
+                        WriteSummary(summary, level + 1);
+                    }
+
+                    if (type.SequenceEqual("string"))
+                    {
+                        Output.WriteLine("    [MarshalAs(UnmanagedType.LPWStr)]");
                     }
 
                     WriteIndent(level + 1);

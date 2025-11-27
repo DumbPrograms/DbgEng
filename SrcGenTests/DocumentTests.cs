@@ -120,6 +120,65 @@ public class DocumentTests : TestsBase
     }
 
     [Fact]
+    public void TestStructXml1()
+    {
+        AssertGeneratedWithDocuments("""
+            /// <summary>
+            /// Blah la la
+            /// </summary>
+            /// <remarks>
+            /// Structure for querying breakpoint information
+            /// all at once.
+            /// </remarks>
+            public partial struct DebugBreakpointParameters
+            {
+                /// <summary>
+                /// Describes A
+                /// </summary>
+                public ULONG A;
+                /// <summary>
+                /// Tells B
+                /// </summary>
+                public LONG  B;
+                /// <summary>
+                /// Story from C
+                /// </summary>
+                [MarshalAs(UnmanagedType.LPWStr)]
+                public string C;
+            }
+            """,
+            """
+            // Structure for querying breakpoint information
+            // all at once.
+            typedef struct _DEBUG_BREAKPOINT_PARAMETERS
+            {
+                ULONG A;
+                LONG  B;
+                PCWSTR C;
+            } DEBUG_BREAKPOINT_PARAMETERS, *PDEBUG_BREAKPOINT_PARAMETERS;
+            """,
+            [
+            """
+            ---
+            UID: NS:dbgeng._DEBUG_BREAKPOINT_PARAMETERS
+            description: Blah la la
+            ---
+            ### -field A
+
+            Describes A
+
+            ### -field B
+            
+            Tells B
+
+            ### -field C
+            
+            Story from C
+            """
+            ]);
+    }
+
+    [Fact]
     public void TestIgnoreDllExport()
     {
         var documents = new Documents();
