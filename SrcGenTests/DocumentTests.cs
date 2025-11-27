@@ -282,10 +282,16 @@ public class DocumentTests : TestsBase
                 /// <param name="Flags">
                 /// Lorem ipsum sit domit
                 /// </param>
+                /// <param name="Args">
+                /// Additional args
+                /// </param>
                 void Boom
                 (
                     // _In_
-                    UINT32 Flags
+                    UINT32 Flags,
+                    // ...
+                    [In, MarshalUsing(typeof(ComVariantMarshaller), ElementIndirectionDepth = 1)]
+                    params object[] Args
                 );
 
             }
@@ -301,7 +307,8 @@ public class DocumentTests : TestsBase
                 // ISomeInterface.
                 STDMETHOD(Boom)(
                     THIS_
-                    _In_ UINT32 Flags
+                    _In_ UINT32 Flags,
+                    ...
                     ) PURE;
             };
             """,
@@ -315,6 +322,11 @@ public class DocumentTests : TestsBase
             ### -param Flags [in]
 
             Lorem ipsum sit domit
+
+            ### -param ...
+
+            Additional args
+
             """,
             """
             ---

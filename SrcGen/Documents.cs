@@ -158,6 +158,11 @@ public class Documents
                 parameterName = parameterName[..space];
             }
 
+            if (parameterName.SequenceEqual("..."))
+            {
+                parameterName = "Args";
+            }
+
             return parameterName;
         }
     }
