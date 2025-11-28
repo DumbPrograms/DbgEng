@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 
@@ -846,7 +847,7 @@ namespace SrcGen
 
         private static string SnakeToCamel(ReadOnlySpan<char> snake)
         {
-            var result = new StringBuilder(snake.Length);
+            var result = new DefaultInterpolatedStringHandler(snake.Length, 0);
 
             Span<char> lower = snake.Length <= 64 ? stackalloc char[snake.Length] : new char[snake.Length];
             snake.ToLowerInvariant(lower);
@@ -857,16 +858,16 @@ namespace SrcGen
 
                 if (part.Length > 0)
                 {
-                    result.Append(Char.ToUpperInvariant(part[0]));
+                    result.AppendFormatted(Char.ToUpperInvariant(part[0]));
 
                     if (part.Length > 1)
                     {
-                        result.Append(part[1..]);
+                        result.AppendFormatted(part[1..]);
                     }
                 }
             }
 
-            return result.ToString();
+            return result.ToStringAndClear();
         }
     }
 }
