@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DbgEngDocsDir>$(ProjectDir)../docs/wdk-ddi-src/content/dbgeng/</DbgEngDocsDir>
+    <MicrosoftDocs>$(ProjectDir)../MicrosoftDocs/</MicrosoftDocs>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +16,7 @@
   <ItemGroup>
     <None Include="$(MicrosoftDebuggingPlatformDbgEngContent)../build/native/inc/dbgeng.h" Link="headers\dbgeng.h" />
     <None Include="../headers/missing.h" Link="headers\missing.h" />
-    <None Include="$(DbgEngDocsDir)*.md" Link="docs\%(FileName).md" />
+    <None Include="$(MicrosoftDocs)**/*.md" Link="docs\%(RecursiveDir)%(FileName).md" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -55,7 +55,7 @@
       <DbgEngMissingHFile>$(ProjectDir)../headers/missing.h</DbgEngMissingHFile>
       <SrcGenOutCsFile>$(IntermediateOutputPath)DbgEng.g.cs</SrcGenOutCsFile>
     </PropertyGroup>
-    <Exec Command="dotnet exec &quot;$(SrcGenDll)&quot; &quot;$(DbgEngHeaderFile)&quot; &quot;$(DbgEngMissingHFile)&quot; &quot;$(SrcGenOutCsFile)&quot; &quot;$(DbgEngDocsDir)&quot;" />
+    <Exec Command="dotnet exec &quot;$(SrcGenDll)&quot; &quot;$(DbgEngHeaderFile)&quot; &quot;$(DbgEngMissingHFile)&quot; &quot;$(SrcGenOutCsFile)&quot; &quot;$(MicrosoftDocs)&quot;" />
     <ItemGroup>
       <Compile Include="$(SrcGenOutCsFile)" />
       <FileWrites Include="$(SrcGenOutCsFile)" />

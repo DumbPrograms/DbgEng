@@ -7,6 +7,7 @@ public class Documents
 {
     const string UidPrefix = "UID:";
     const string UidDbgEngPrefix = "Nx:dbgeng.";
+    const string UidWinNTPrefix = "Nx:winnt.";
     const string DescriptionPrefix = "description:";
 
     readonly Dictionary<string, string> TypeSummaries = [];
@@ -24,7 +25,7 @@ public class Documents
 
         var documents = new Documents();
 
-        documents.Parse(Directory.EnumerateFiles(dir).Select(File.OpenText));
+        documents.Parse(Directory.EnumerateFiles(dir, "*.md", SearchOption.AllDirectories).Select(File.OpenText));
 
         return documents;
     }
@@ -79,6 +80,7 @@ public class Documents
         }
 
         var uid = fullLine.AsSpan(UidPrefix.Length).Trim();
+        var isDbgeng = uid.Contains(":dbgeng.", StringComparison.Ordinal);
 
         switch (uid[1])
         {
@@ -86,18 +88,33 @@ public class Documents
             // index page, no use, skip
             case 'C':
             // callback functions, skip for now
+            case 'E':
+            // enums, not seen yet, skip
             case 'L':
-                // IXyzCallbacks base implementations, skip
+            // IXyzCallbacks base implementations, skip
                 return;
 
             case 'N':
-                ParseInterface(uid[UidDbgEngPrefix.Length..], reader);
+                if (isDbgeng)
+                {
+                    ParseInterface(uid[UidDbgEngPrefix.Length..], reader);
+                }
                 return;
             case 'F':
-                ParseFunction(uid[UidDbgEngPrefix.Length..], reader);
+                if (isDbgeng)
+                {
+                    ParseFunction(uid[UidDbgEngPrefix.Length..], reader);
+                }
                 return;
             case 'S':
-                ParseStruct(uid[(UidDbgEngPrefix.Length + 1)..], reader);
+                if (isDbgeng)
+                {
+                    ParseStruct(uid[(UidDbgEngPrefix.Length + 1)..], reader);
+                }
+                else if (uid.Contains(":winnt.", StringComparison.Ordinal))
+                {
+                    ParseStruct(uid[(UidWinNTPrefix.Length + 1)..], reader);
+                }
                 return;
 
             default:

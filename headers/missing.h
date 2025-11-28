@@ -1,7 +1,8 @@
 ﻿///////////////////////////////////////////////////////////
 // missing structs
 
-const DWORD EXCEPTION_MAXIMUM_PARAMETERS = 15; // maximum number of exception parameters
+// Maximum number of exception parameters
+const DWORD EXCEPTION_MAXIMUM_PARAMETERS = 15;
 
 typedef struct _EXCEPTION_RECORD64 {
     DWORD    ExceptionCode;
@@ -28,6 +29,7 @@ typedef struct _IMAGE_DATA_DIRECTORY {
     DWORD   Size;
 } IMAGE_DATA_DIRECTORY, * PIMAGE_DATA_DIRECTORY;
 
+// Maximum number of image data directory entries
 const DWORD IMAGE_NUMBEROF_DIRECTORY_ENTRIES = 16;
 
 typedef struct _IMAGE_OPTIONAL_HEADER64 {

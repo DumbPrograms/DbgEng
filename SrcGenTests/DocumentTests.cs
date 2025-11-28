@@ -88,6 +88,38 @@ public class DocumentTests : TestsBase
     }
 
     [Fact]
+    public void TestStructWinNT()
+    {
+        var documents = new Documents();
+        documents.Parse([
+            new StringReader("""
+                ---
+                UID: NS:winnt._DEBUG_BREAKPOINT_PARAMETERS
+                description: Blah la la
+                ---
+
+                ### -field Offset
+
+                Lorem ipsum sit domit
+
+                ### -field Id
+
+                Je <a href="wewe">ha jit mi</a>.
+                
+                """)
+        ]);
+
+        Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", out var summary));
+        Assert.Equal("Blah la la", summary);
+
+        Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", "Offset", out summary));
+        Assert.Equal("Lorem ipsum sit domit", summary);
+
+        Assert.True(documents.TryGetSummary("DEBUG_BREAKPOINT_PARAMETERS", "Id", out summary));
+        Assert.Equal("Je <a href=\"wewe\">ha jit mi</a>.", summary);
+    }
+
+    [Fact]
     public void TestStructXml()
     {
         AssertGeneratedWithDocuments("""
