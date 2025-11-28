@@ -255,33 +255,33 @@ namespace SrcGen
 
                     inCodeBlock = !inCodeBlock;
                     hasContents = true;
-
                     continue;
                 }
 
                 if (inCodeBlock)
                 {
                     Output.WriteLine(SecurityElement.Escape(line.ToString()));
+
+                    Debug.Assert(hasContents);
+                    continue;
                 }
-                else
+
+                var isHorizontalLine = line[0] is '/' or '-' or '#';
+
+                if (hasContents && (isHorizontalLine || Char.IsUpper(line[0])))
                 {
-                    var isHorizontalLine = line[0] is '/' or '-' or '#';
+                    Output.WriteLine("<br />");
 
-                    if (hasContents && (isHorizontalLine || Char.IsUpper(line[0])))
-                    {
-                        Output.WriteLine("<br />");
+                    WriteIndent(indentLevel);
+                    Output.Write("/// ");
+                }
 
-                        WriteIndent(indentLevel);
-                        Output.Write("/// ");
-                    }
+                Output.WriteLine(line);
 
-                    Output.WriteLine(line);
-
-                    if (isHorizontalLine)
-                    {
-                        WriteIndent(indentLevel);
-                        Output.WriteLine("/// <br />");
-                    }
+                if (isHorizontalLine)
+                {
+                    WriteIndent(indentLevel);
+                    Output.WriteLine("/// <br />");
                 }
 
                 hasContents = true;
