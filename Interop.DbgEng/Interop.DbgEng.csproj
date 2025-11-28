@@ -16,7 +16,8 @@
   <ItemGroup>
     <None Include="$(MicrosoftDebuggingPlatformDbgEngContent)../build/native/inc/dbgeng.h" Link="headers\dbgeng.h" />
     <None Include="../headers/missing.h" Link="headers\missing.h" />
-    <None Include="$(MicrosoftDocs)**/*.md" Link="docs\%(RecursiveDir)%(FileName).md" />
+    <None Include="$(MicrosoftDocs)sdk/sdk-api-src/content/winnt/*.md" Link="docs\winnt\%(FileName).md" />
+    <None Include="$(MicrosoftDocs)wdk/wdk-ddi-src/content/dbgeng/*.md" Link="docs\dbgeng\%(FileName).md" />
   </ItemGroup>
 
   <PropertyGroup>
