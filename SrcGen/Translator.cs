@@ -16,6 +16,8 @@ namespace SrcGen
             using System.Runtime.InteropServices.Marshalling;
             
             namespace Interop.DbgEng;
+
+            #pragma warning disable CS1591
             
             """;
 
