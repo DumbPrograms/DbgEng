@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
     <File Path="Directory.Build.props" />
   </Folder>
   <Project Path="Interop.DbgEng/Interop.DbgEng.csproj" Id="c357d88c-6b68-498e-b44a-15692c159743">
