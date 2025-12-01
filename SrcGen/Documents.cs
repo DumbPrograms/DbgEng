@@ -12,7 +12,7 @@ public class Documents
 
     readonly Dictionary<string, string> TypeSummaries = [];
     readonly Dictionary<string, Dictionary<string, string>> MemberSummaries = [];
-    readonly Dictionary<string, List<(string name, string summary)>> Parameters = [];
+    readonly Dictionary<string, List<(bool isOut, string name, string summary)>> Parameters = [];
 
     public static Documents Empty { get; } = new();
 
@@ -45,7 +45,7 @@ public class Documents
         return false;
     }
 
-    public bool TryGetParameters(ReadOnlySpan<char> type, ReadOnlySpan<char> method, [MaybeNullWhen(false)] out IReadOnlyList<(string name, string summary)> parameters)
+    public bool TryGetParameters(ReadOnlySpan<char> type, ReadOnlySpan<char> method, [MaybeNullWhen(false)] out IReadOnlyList<(bool isOut, string name, string summary)> parameters)
     {
         if (Parameters.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue([.. type, '.', .. method], out var list))
         {
@@ -146,7 +146,7 @@ public class Documents
 
         if (reader.SeekLineWithPrefix(memberHeader) is string memberLine)
         {
-            var parameterName = getParameterName(memberLine);
+            var parameterName = getParameterName(memberLine, out var isOut);
             var lookup = Parameters.GetAlternateLookup<ReadOnlySpan<char>>();
 
             if (!lookup.TryGetValue(functionName, out var parameters))
@@ -156,30 +156,40 @@ public class Documents
 
             do
             {
-                var parameterNameString = parameterName.ToString();
-                var description = ParseMemberDescription(reader, memberHeader, getParameterName, out parameterName);
+                var description = ParseMemberDescription(reader, memberHeader, out var nextMemberLine);
 
-                parameters.Add((parameterNameString, description));
+                parameters.Add((isOut, parameterName, description));
+
+                parameterName = getParameterName(nextMemberLine, out isOut);
             }
-            while (!parameterName.IsEmpty);
+            while (parameterName is not null);
         }
 
-        static ReadOnlySpan<char> getParameterName(string memberLine)
+        [return: NotNullIfNotNull(nameof(memberLine))]
+        static string? getParameterName(string? memberLine, out bool isOut)
         {
+            isOut = false;
+
+            if (memberLine is null)
+            {
+                return null;
+            }
+
             var parameterName = memberLine.AsSpan(memberHeader.Length).Trim();
 
             var space = parameterName.IndexOf(' ');
             if (space > 0)
             {
+                isOut = parameterName[space..].Contains("out", StringComparison.Ordinal);
                 parameterName = parameterName[..space];
             }
 
             if (parameterName.SequenceEqual("..."))
             {
-                parameterName = "Args";
+                return "Args";
             }
 
-            return parameterName;
+            return parameterName.ToString();
         }
     }
 
@@ -202,16 +212,23 @@ public class Documents
 
             do
             {
-                var fieldNameString = fieldName.ToString();
-                var description = ParseMemberDescription(reader, memberHeader, getFieldName, out fieldName);
+                var description = ParseMemberDescription(reader, memberHeader, out var nextMemberLine);
 
-                fields.Add(fieldNameString, description);
+                fields.Add(fieldName, description);
+
+                fieldName = getFieldName(nextMemberLine);
             }
-            while (!fieldName.IsEmpty);
+            while (fieldName is not null);
         }
 
-        static ReadOnlySpan<char> getFieldName(string memberLine)
+        [return: NotNullIfNotNull(nameof(memberLine))]
+        static string? getFieldName(string? memberLine)
         {
+            if (memberLine is null)
+            {
+                return null;
+            }
+
             var fieldName = memberLine.AsSpan(memberHeader.Length).Trim();
 
             var square = fieldName.IndexOf('[');
@@ -220,11 +237,11 @@ public class Documents
                 fieldName = fieldName[..square];
             }
 
-            return fieldName;
+            return fieldName.ToString();
         }
     }
 
-    private static string ParseMemberDescription(TextReader reader, string memberHeader, Func<string, ReadOnlySpan<char>> getMemberName, out ReadOnlySpan<char> memberName)
+    private static string ParseMemberDescription(TextReader reader, string memberHeader, out string? nextMemberLine)
     {
         var builder = new DefaultInterpolatedStringHandler(512, 0);
 
@@ -232,7 +249,7 @@ public class Documents
         {
             if (fullLine.StartsWith(memberHeader))
             {
-                memberName = getMemberName(fullLine);
+                nextMemberLine = fullLine;
                 goto exit;
             }
             else if (fullLine.StartsWith("## ") || fullLine.StartsWith("# "))
@@ -244,7 +261,7 @@ public class Documents
             builder.AppendLiteral(Environment.NewLine);
         }
 
-        memberName = [];
+        nextMemberLine = null;
 
     exit:
         var result = builder.Text.Trim().ToString();

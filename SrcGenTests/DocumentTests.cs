@@ -436,9 +436,33 @@ public class DocumentTests : TestsBase
         Assert.Equal("The EndSession method ends ...", summary);
 
         Assert.True(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
-        Assert.Equal([("Flags", "Lorem ipsum sit domit")], parameters);
+        Assert.Equal([(isOut: false, "Flags", "Lorem ipsum sit domit")], parameters);
     }
 
+    [Fact]
+    public void TestFunctionWithOutputParameter()
+    {
+        var documents = new Documents();
+        documents.Parse([
+            new StringReader("""
+                ---
+                UID: NF:dbgeng.IDebugClient.EndSession
+                title: IDebugClient::EndSession (dbgeng.h)
+                description: The EndSession method ends ...
+                ---
+
+                ### -param Flags [out]
+
+                Lorem ipsum sit domit
+                """)
+        ]);
+
+        Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out var summary));
+        Assert.Equal("The EndSession method ends ...", summary);
+
+        Assert.True(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
+        Assert.Equal([(isOut: true, "Flags", "Lorem ipsum sit domit")], parameters);
+    }
 
     [Fact]
     public void TestInterfaceFunction()
@@ -471,7 +495,7 @@ public class DocumentTests : TestsBase
         Assert.Equal("The EndSession method ends ...", summary);
 
         Assert.True(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
-        Assert.Equal([("Flags", "Lorem ipsum sit domit")], parameters);
+        Assert.Equal([(isOut: false, "Flags", "Lorem ipsum sit domit")], parameters);
     }
 
     [Fact]
