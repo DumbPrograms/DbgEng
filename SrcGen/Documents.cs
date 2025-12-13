@@ -99,14 +99,10 @@ public partial class Documents
 
         switch (uid[1])
         {
-            case 'A':
-            // index page, no use, skip
-            case 'C':
-            // callback functions, skip for now
-            case 'E':
-            // enums, not seen yet, skip
-            case 'L':
-                // IXyzCallbacks base implementations, skip
+            case 'A': // index page, no use, skip
+            case 'C': // callback functions, skip for now
+            case 'E': // enums, not seen yet, skip
+            case 'L': // IXyzCallbacks base implementations, skip
                 return;
 
             case 'N':
