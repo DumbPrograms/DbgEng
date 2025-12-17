@@ -20,6 +20,10 @@ public partial class Documents
 
     public static Documents Empty { get; } = new();
 
+    public bool IsEmpty
+        => (TypeSummaries.Count, MemberSummaries.Count, Parameters.Count, ReturnCodes.Count)
+        == (0, 0, 0, 0);
+
     internal static Documents From(string dir)
     {
         if (!Directory.Exists(dir))
@@ -90,7 +94,7 @@ public partial class Documents
 
     private void Parse(TextReader reader)
     {
-        if (!reader.TrySeekLine(UidPrefix, out var fullLine))
+        if (!reader.TrySeekLine(UidPrefix, out var fullLine, prefixesToStop: "#"))
         {
             return;
         }
@@ -156,12 +160,12 @@ public partial class Documents
 
         var summary = "";
 
-        if (reader.TrySeekLine(DescriptionPrefix, out var nextLine))
+        if (reader.TrySeekLine(DescriptionPrefix, out var nextLine, prefixesToStop: "---"))
         {
             summary = nextLine.AsSpan(DescriptionPrefix.Length).Trim().ToString();
         }
 
-        if (reader.TrySeekLine(DescriptionHeader, out nextLine, ignoreLeadingSpaces: false, paramsHeader, returnsHeader))
+        if (reader.TrySeekLine(DescriptionHeader, out nextLine, prefixesToStop: [paramsHeader, returnsHeader]))
         {
             var detailedSummary = ParseDescription(reader, DescriptionHeader, out nextLine, out var more);
             Debug.Assert(!more);

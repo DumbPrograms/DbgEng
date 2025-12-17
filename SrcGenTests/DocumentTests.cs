@@ -5,6 +5,19 @@ namespace SrcGenTests;
 public class DocumentTests : TestsBase
 {
     [Fact]
+    public void TestEtcFiles()
+    {
+        var documents = new Documents();
+        documents.Parse([
+            new StringReader("""
+                # README
+                """)
+        ]);
+
+        Assert.True(documents.IsEmpty);
+    }
+
+    [Fact]
     public void TestInterface()
     {
         var documents = new Documents();
@@ -430,6 +443,50 @@ public class DocumentTests : TestsBase
 
         Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out var summary));
         Assert.Equal("The EndSession method ends ...", summary);
+
+        Assert.False(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
+        Assert.Null(parameters);
+    }
+
+    [Fact]
+    public void TestFunctionWithoutDescriptions()
+    {
+        var documents = new Documents();
+        documents.Parse([
+            new StringReader("""
+                ---
+                UID: NF:dbgeng.IDebugClient.EndSession
+                title: IDebugClient::EndSession (dbgeng.h)
+                ---
+                """)
+        ]);
+
+        Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out var summary));
+        Assert.Equal("", summary);
+
+        Assert.False(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
+        Assert.Null(parameters);
+    }
+
+    [Fact]
+    public void TestFunctionWithDescriptionSection()
+    {
+        var documents = new Documents();
+        documents.Parse([
+            new StringReader("""
+                ---
+                UID: NF:dbgeng.IDebugClient.EndSession
+                title: IDebugClient::EndSession (dbgeng.h)
+                ---
+
+                ## -description
+
+                Yes
+                """)
+        ]);
+
+        Assert.True(documents.TryGetSummary("IDebugClient", "EndSession", out var summary));
+        Assert.Equal("Yes", summary);
 
         Assert.False(documents.TryGetParameters("IDebugClient", "EndSession", out var parameters));
         Assert.Null(parameters);

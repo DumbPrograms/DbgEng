@@ -4,7 +4,7 @@ namespace SrcGen;
 
 internal static class TextReaderExtensions
 {
-    public static bool TrySeekLine(this TextReader reader, string prefix, [MaybeNullWhen(false)] out string line, bool ignoreLeadingSpaces = false, params ReadOnlySpan<string> excludePrefices)
+    public static bool TrySeekLine(this TextReader reader, string prefix, [MaybeNullWhen(false)] out string line, bool ignoreLeadingSpaces = false, params ReadOnlySpan<string> prefixesToStop)
     {
         while ((line = reader.ReadLine()) is not null)
         {
@@ -20,7 +20,7 @@ internal static class TextReaderExtensions
                 return true;
             }
 
-            foreach (var stopper in excludePrefices)
+            foreach (var stopper in prefixesToStop)
             {
                 if (span.StartsWith(stopper))
                 {
